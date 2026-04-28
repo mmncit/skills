@@ -1,0 +1,68 @@
+name: Publish to skills.sh
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/SKILL.md"
+
+jobs:
+  validate:
+    name: Validate skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SKILL.md files have required frontmatter
+        run: |
+          exit_code=0
+          for skill in $(find . -name "SKILL.md" -not -path "./.agents/*" -not -path "./.git/*"); do
+            dir=$(dirname "$skill")
+            folder=$(basename "$dir")
+            echo "Checking $skill (folder: $folder)..."
+
+            # Check for frontmatter delimiters
+            if ! head -1 "$skill" | grep -q "^---"; then
+              echo "::error file=$skill::Missing YAML frontmatter"
+              exit_code=1
+              continue
+            fi
+
+            # Extract name field
+            name=$(sed -n '/^---$/,/^---$/p' "$skill" | grep "^name:" | head -1 | sed 's/name: *//;s/^ *//;s/ *$//')
+            if [ -z "$name" ]; then
+              echo "::error file=$skill::Missing 'name' in frontmatter"
+              exit_code=1
+              continue
+            fi
+
+            # Check name matches folder
+            if [ "$name" != "$folder" ]; then
+              echo "::error file=$skill::name '$name' does not match folder '$folder'"
+              exit_code=1
+              continue
+            fi
+
+            # Check for description
+            desc=$(sed -n '/^---$/,/^---$/p' "$skill" | grep "^description:")
+            if [ -z "$desc" ]; then
+              echo "::error file=$skill::Missing 'description' in frontmatter"
+              exit_code=1
+              continue
+            fi
+
+            echo "  ✓ $name"
+          done
+          exit $exit_code
+
+  publish:
+    name: Register with skills.sh
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install skill to trigger skills.sh registration
+        run: npx -y skills add mmncit/skills
