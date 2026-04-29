@@ -1,9 +1,9 @@
 ---
-name: refactor-state-management
+name: react-state
 description: "Refactor and review state management in React and TypeScript applications. Use when: refactoring component state, reviewing useState usage, choosing between local and global state, preventing unnecessary re-renders, selecting state management libraries (Zustand, Jotai, Redux), applying discriminated unions, deriving state, managing refs vs state, or eliminating prop drilling."
 ---
 
-# Refactor State Management
+# React State Management
 
 Refactor component state for correctness, performance, and type safety in React + TypeScript.
 
