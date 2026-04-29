@@ -65,4 +65,4 @@ jobs:
           node-version: "20"
 
       - name: Install skill to trigger skills.sh registration
-        run: npx -y skills add mmncit/skills
+        run: npx -y skills add mmncit/skills -g -y
