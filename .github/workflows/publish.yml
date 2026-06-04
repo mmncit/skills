@@ -12,7 +12,25 @@ jobs:
     name: Validate skills
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Verify skills CLI discovers every skill (real YAML parse)
+        run: |
+          # The grep-based check below can't catch malformed YAML (e.g. an
+          # unquoted ': ' in a description). The skills CLI uses a real YAML
+          # parser and silently skips skills it can't parse, so assert that
+          # the count it discovers matches the number of SKILL.md files.
+          expected=$(find . -name "SKILL.md" -not -path "./.agents/*" -not -path "./.git/*" | wc -l | tr -d ' ')
+          found=$(npx -y skills add . -l 2>&1 | grep -oE "Found [0-9]+ skill" | grep -oE "[0-9]+")
+          echo "SKILL.md files: $expected | skills CLI discovered: $found"
+          if [ "$expected" != "$found" ]; then
+            echo "::error::skills CLI discovered $found of $expected skills — a SKILL.md likely has malformed YAML frontmatter (check for unquoted ': ' in description)"
+            exit 1
+          fi
 
       - name: Check SKILL.md files have required frontmatter
         run: |
@@ -61,9 +79,9 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
 
-      - name: Install skill to trigger skills.sh registration
-        run: npx -y skills add mmncit/skills -g -y
+      - name: Install skills to trigger skills.sh registration
+        run: npx -y skills add mmncit/skills -g -s '*' -y

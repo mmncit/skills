@@ -1,6 +1,6 @@
 ---
 name: add-security-headers
-description: Implements HTTP security response headers across a polyglot microservices platform. Use when asked to add or fix security headers (X-Content-Type-Options, X-XSS-Protection, Cache-Control, Pragma, Content-Security-Policy) flagged by a pentest, scanner, or security ticket. Covers all common surfaces: Kubernetes ingress (Traefik), nginx SPA, Next.js, and ASP.NET Core middleware. Handles header value decisions, nginx inheritance gotchas, asset-caching carve-outs, stacked branch sequencing, and PR description templates.
+description: "Implements HTTP security response headers across a polyglot microservices platform. Use when asked to add or fix security headers (X-Content-Type-Options, X-XSS-Protection, Cache-Control, Pragma, Content-Security-Policy) flagged by a pentest, scanner, or security ticket. Covers all common surfaces: Kubernetes ingress (Traefik), nginx SPA, Next.js, and ASP.NET Core middleware. Handles header value decisions, nginx inheritance gotchas, asset-caching carve-outs, stacked branch sequencing, and PR description templates."
 ---
 
 # Security Headers
