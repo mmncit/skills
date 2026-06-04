@@ -18,61 +18,42 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Verify skills CLI discovers every skill (real YAML parse)
+      # Parse each SKILL.md's frontmatter with a real YAML parser. A grep-based
+      # check can't catch malformed YAML (e.g. an unquoted ': ' in a
+      # description), which the skills CLI silently skips at publish time —
+      # the skill then never registers on skills.sh.
+      - name: Validate SKILL.md frontmatter
         run: |
-          # The grep-based check below can't catch malformed YAML (e.g. an
-          # unquoted ': ' in a description). The skills CLI uses a real YAML
-          # parser and silently skips skills it can't parse, so assert that
-          # the count it discovers matches the number of SKILL.md files.
-          expected=$(find . -name "SKILL.md" -not -path "./.agents/*" -not -path "./.git/*" | wc -l | tr -d ' ')
-          found=$(npx -y skills add . -l 2>&1 | grep -oE "Found [0-9]+ skill" | grep -oE "[0-9]+")
-          echo "SKILL.md files: $expected | skills CLI discovered: $found"
-          if [ "$expected" != "$found" ]; then
-            echo "::error::skills CLI discovered $found of $expected skills — a SKILL.md likely has malformed YAML frontmatter (check for unquoted ': ' in description)"
-            exit 1
-          fi
+          npm install --no-save js-yaml@4
+          node <<'EOF'
+          const fs = require("fs");
+          const path = require("path");
+          const { execSync } = require("child_process");
+          const yaml = require("js-yaml");
 
-      - name: Check SKILL.md files have required frontmatter
-        run: |
-          exit_code=0
-          for skill in $(find . -name "SKILL.md" -not -path "./.agents/*" -not -path "./.git/*"); do
-            dir=$(dirname "$skill")
-            folder=$(basename "$dir")
-            echo "Checking $skill (folder: $folder)..."
+          const files = execSync(
+            'find . -name SKILL.md -not -path "./.agents/*" -not -path "./.git/*"'
+          ).toString().trim().split("\n").filter(Boolean);
 
-            # Check for frontmatter delimiters
-            if ! head -1 "$skill" | grep -q "^---"; then
-              echo "::error file=$skill::Missing YAML frontmatter"
-              exit_code=1
-              continue
-            fi
+          let failed = false;
+          for (const file of files) {
+            const folder = path.basename(path.dirname(file));
+            const text = fs.readFileSync(file, "utf8");
+            const m = text.match(/^---\n([\s\S]*?)\n---/);
+            if (!m) { console.log(`::error file=${file}::Missing YAML frontmatter`); failed = true; continue; }
 
-            # Extract name field
-            name=$(sed -n '/^---$/,/^---$/p' "$skill" | grep "^name:" | head -1 | sed 's/name: *//;s/^ *//;s/ *$//')
-            if [ -z "$name" ]; then
-              echo "::error file=$skill::Missing 'name' in frontmatter"
-              exit_code=1
-              continue
-            fi
+            let fm;
+            try { fm = yaml.load(m[1]); }
+            catch (e) { console.log(`::error file=${file}::Invalid YAML frontmatter: ${e.message.split("\n")[0]}`); failed = true; continue; }
 
-            # Check name matches folder
-            if [ "$name" != "$folder" ]; then
-              echo "::error file=$skill::name '$name' does not match folder '$folder'"
-              exit_code=1
-              continue
-            fi
+            if (!fm || !fm.name) { console.log(`::error file=${file}::Missing 'name' in frontmatter`); failed = true; continue; }
+            if (fm.name !== folder) { console.log(`::error file=${file}::name '${fm.name}' does not match folder '${folder}'`); failed = true; continue; }
+            if (!fm.description) { console.log(`::error file=${file}::Missing 'description' in frontmatter`); failed = true; continue; }
 
-            # Check for description
-            desc=$(sed -n '/^---$/,/^---$/p' "$skill" | grep "^description:")
-            if [ -z "$desc" ]; then
-              echo "::error file=$skill::Missing 'description' in frontmatter"
-              exit_code=1
-              continue
-            fi
-
-            echo "  ✓ $name"
-          done
-          exit $exit_code
+            console.log(`  ✓ ${fm.name}`);
+          }
+          process.exit(failed ? 1 : 0);
+          EOF
 
   publish:
     name: Register with skills.sh
