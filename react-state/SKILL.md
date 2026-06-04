@@ -1,5 +1,5 @@
 ---
-name: react-state-management
+name: react-state
 description: "Architect, refactor, and review state management in React + TypeScript (and Next.js) apps. Use this skill whenever the user is deciding where a piece of state should live, refactoring useState/useEffect, fixing impossible states or stale/derived state, untangling cascading effects, handling forms, syncing state to the URL, fetching server data, normalizing nested data, choosing a state library (Zustand, Jotai, Redux, XState Store), subscribing to external/browser stores, or testing state logic. Trigger it even when the user just describes the symptom — 'my component re-renders too much', 'these two states get out of sync', 'I have five useEffects calling each other', 'I lose my filters on refresh', 'loading flag and error flag are both true' — not only when they say the words 'state management'."
 ---
 
