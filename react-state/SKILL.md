@@ -1,208 +1,100 @@
 ---
-name: react-state
-description: "Refactor and review state management in React and TypeScript applications. Use when: refactoring component state, reviewing useState usage, choosing between local and global state, preventing unnecessary re-renders, selecting state management libraries (Zustand, Jotai, Redux), applying discriminated unions, deriving state, managing refs vs state, or eliminating prop drilling."
+name: react-state-management
+description: "Architect, refactor, and review state management in React + TypeScript (and Next.js) apps. Use this skill whenever the user is deciding where a piece of state should live, refactoring useState/useEffect, fixing impossible states or stale/derived state, untangling cascading effects, handling forms, syncing state to the URL, fetching server data, normalizing nested data, choosing a state library (Zustand, Jotai, Redux, XState Store), subscribing to external/browser stores, or testing state logic. Trigger it even when the user just describes the symptom — 'my component re-renders too much', 'these two states get out of sync', 'I have five useEffects calling each other', 'I lose my filters on refresh', 'loading flag and error flag are both true' — not only when they say the words 'state management'."
 ---
 
 # React State Management
 
-Refactor component state for correctness, performance, and type safety in React + TypeScript.
+State bugs almost always trace back to one root cause: **a piece of state is in the wrong place, or it shouldn't be state at all.** Most of the work is deciding *where each value lives*, then expressing changes as **events** rather than scattered mutations. Get the placement right and whole categories of bugs (stale data, impossible states, race conditions, re-render storms) disappear.
 
-## When to Use
+Apply the decision framework below first. Reach for libraries last.
 
-- Refactoring or reviewing component state structure
-- Deciding between `useState`, `useRef`, or derived values
-- Replacing boolean flags with finite state types
-- Choosing a third-party state management library
-- Applying TypeScript discriminated unions for type-safe state
-- Fixing unnecessary re-renders caused by state design
-- Eliminating prop drilling or Context overuse
+## The core question: where should this value live?
 
-## Structuring State
+For every value a component touches, walk this ladder top to bottom and stop at the first match. Each rung is cheaper and less bug-prone than the one below it.
 
-### Group Related State
+1. **Can I compute it from existing state/props?** → **Derive it inline during render.** Don't store it. (totals, filtered/sorted lists, the selected object from a list of IDs, "is the form valid"). Only wrap in `useMemo` if the calc is genuinely expensive *and* its inputs change rarely.
+2. **Does changing it need to re-render the UI?** If no → **`useRef`.** (timer IDs, scroll position, previous values, analytics counters, the latest event without a redraw.)
+3. **Should it survive a refresh or be shareable/bookmarkable?** → **URL query params** (via `nuqs`). (search filters, sort, pagination, active tab, selected category.) See `references/url-state.md`.
+4. **Does it come from a server?** → **a server-state library** (TanStack Query), not `useEffect` + `useState`. (fetched lists, the booking record, anything cached.) See `references/server-state.md`.
+5. **Does it live outside React?** → **`useSyncExternalStore`.** (network status, media queries, a vanilla store, websocket data.) See `references/external-stores.md`.
+6. **Is it genuinely local component state that drives rendering?** → **`useState`**, or **`useReducer`** once multiple values change together or transitions get interesting (see below).
+7. **Is it shared across a deep tree, with the above already applied?** → Context for low-frequency values; a **store with selectors** (Zustand/Redux/XState Store) or **atoms** (Jotai) for frequently-changing shared state. See `references/external-stores.md`.
 
-Group related data into a single object instead of maintaining multiple independent `useState` calls. This keeps updates consistent and reduces the chance of state getting out of sync.
+> The single most common mistake is stopping too low on this ladder — using `useState` (rung 6) for something that is derived (rung 1), server data (rung 4), or URL state (rung 3).
 
-```tsx
-// Avoid: separate variables for related data
-const [firstName, setFirstName] = useState("");
-const [lastName, setLastName] = useState("");
-const [email, setEmail] = useState("");
+## Model before you build
 
-// Prefer: single object for related data
-const [formData, setFormData] = useState({
-  firstName: "",
-  lastName: "",
-  email: "",
-});
-```
+For anything beyond a trivial component, spend a few minutes modeling in plain text *before* coding — it surfaces edge cases and impossible states early. Sketch the entities (what data + relationships), the sequence (what calls what, in what order), and the states (what the user sees, what's stored, what's happening behind the scenes, and which events move between them). This is where you discover that "loading", "error", and "data" are really one `status` value, not three booleans. See `references/modeling.md`.
 
-### Use Previous State When Updating Objects
+## Events are the source of truth
 
-Always use the callback form of the setter when the new state depends on the previous state. This avoids closure issues that lead to stale or lost updates.
+When several values change together or in response to a user action, don't fire off setters one by one. Name the **event** that happened (`flightSelected`, `searchSubmitted`, `searchFailed`) and let one reducer compute the next state. State is a *snapshot derived from events* — this gives you an audit trail, predictable transitions, testable pure logic, and no race conditions. This mindset is what kills the "cascading `useEffect`" anti-pattern (effects that trigger other effects). See `references/antipatterns.md` and `references/finite-state.md`.
+
+## Make impossible states impossible
+
+Multiple booleans multiply into invalid combinations (`isLoading && isError` both true — now what?). Replace them with a single discriminated union where each state carries exactly the data it needs:
 
 ```tsx
-// Avoid: spreading directly (risks stale closures)
-setFormData({ ...formData, email: newEmail });
+// Avoid: booleans that allow impossible combinations
+const [isLoading, setIsLoading] = useState(false);
+const [isError, setIsError] = useState(false);
+const [data, setData] = useState<Data | null>(null);
 
-// Prefer: callback with previous state
-setFormData((prev) => ({ ...prev, email: newEmail }));
+// Prefer: one value, impossible states unrepresentable
+type State =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error'; error: string }
+  | { status: 'success'; data: Data };
+
+const [state, setState] = useState<State>({ status: 'idle' });
+if (state.status === 'success') state.data; // ✓ TypeScript narrows; data only exists here
 ```
 
-## Derive State — Don't Duplicate It
+See `references/finite-state.md` for discriminated unions, `useReducer`, Context + custom hooks, and type-states.
 
-Compute values directly during rendering instead of maintaining separate state variables for derived information.
+## Refactor procedure
 
-```tsx
-// Avoid: duplicated state
-const [hotels, setHotels] = useState<Hotel[]>([]);
-const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
+When asked to refactor or review state in a component, work through these in order:
 
-// Prefer: store only the ID, derive the object
-const [hotels, setHotels] = useState<Hotel[]>([]);
-const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
-const selectedHotel = hotels.find((h) => h.id === selectedHotelId) ?? null;
-```
+1. **Inventory every `useState`/`useEffect`** and note what triggers each update and why.
+2. **Delete derived state.** Anything computable from other state/props → compute inline. Remove the `useEffect` that was syncing it (rung 1).
+3. **Move non-rendering values to `useRef`** — timer IDs, scroll positions, previous values (rung 2).
+4. **Relocate misplaced state** — server data → query library (rung 4); shareable/persistent → URL (rung 3); external source → `useSyncExternalStore` (rung 5).
+5. **Group related fields** that always change together into one object; update with the callback form `setState(prev => ...)` to avoid stale closures.
+6. **Collapse boolean flags** into a `status` discriminated union (impossible states).
+7. **Convert cascading effects to events** — replace chains of effects with a `useReducer` whose actions are business events, plus at most one effect that runs side effects off the current status. See `references/antipatterns.md`.
+8. **Normalize nested data** if updates require deep `map`/`filter` gymnastics — store entities by ID, reference by ID. See `references/normalization.md`.
+9. **Only now consider a library**, if prop drilling, Context overuse, or sync issues persist. See `references/external-stores.md`.
+10. **Extract pure logic so it's testable** without rendering. See `references/testing.md`.
 
-**Principle:** If a value can be computed from existing state or props, derive it during rendering rather than storing it separately.
+## Quick anti-pattern reference
 
-## When NOT to Use `useState`
+| Symptom | Root cause | Fix |
+| --- | --- | --- |
+| Two states drift out of sync | One is derived from the other but stored separately | Derive inline; delete the duplicate (rung 1) |
+| `useEffect` copies state A → state B | Syncing derived state via effect | Compute B during render |
+| Re-renders on every change, no visual update | `useState` for a non-render value | `useRef` (rung 2) |
+| `isLoading`/`isError`/`isSuccess` booleans | Impossible state combinations | One `status` union |
+| 3–5 effects triggering each other | Reactive thinking ("when X changes…") | Event-driven `useReducer` + 1 effect |
+| Filters lost on refresh / not shareable | UI state kept local | URL query params (`nuqs`) |
+| Manual `isLoading`/`error` around `fetch` in `useEffect` | Server state treated as local state | TanStack Query (rung 4) |
+| Storing a whole object when you only pick by ID | Redundant state, stale references | Store the ID, derive the object via `.find()` |
+| Deep `map(...map(...filter))` to update one item | Nested data structure | Normalize: entities keyed by ID |
+| `useEffect` + `useState` to track `navigator.onLine` etc. | External store synced manually | `useSyncExternalStore` (rung 5) |
+| Whole Context re-renders all consumers | High-frequency value in Context | Store with selectors, or split contexts |
 
-Avoid `useState` for:
+## Reference files
 
-| Scenario                                     | Use Instead                      |
-| -------------------------------------------- | -------------------------------- |
-| Static values that never change              | `const` or module-level variable |
-| Values computable from existing state/props  | Derive inline during render      |
-| Values that don't need to trigger re-renders | `useRef`                         |
+Read the relevant file before doing deep work in that area:
 
-### Use `useRef` for Non-Rendering Values
-
-For values that update frequently but should not cause re-renders, use `useRef`.
-
-**Scroll position tracking:**
-
-```tsx
-const scrollPosition = useRef(0);
-
-useEffect(() => {
-  const handleScroll = () => {
-    scrollPosition.current = window.scrollY;
-  };
-  window.addEventListener("scroll", handleScroll);
-  return () => window.removeEventListener("scroll", handleScroll);
-}, []);
-```
-
-**Timer IDs:**
-
-```tsx
-const timerId = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-const startTimer = () => {
-  timerId.current = setTimeout(() => {
-    // ...
-  }, 1000);
-};
-
-const stopTimer = () => {
-  if (timerId.current) clearTimeout(timerId.current);
-};
-```
-
-## TypeScript Patterns for Type-Safe State
-
-### Finite States
-
-Represent a limited, predefined set of possible states to simplify state tracking and prevent impossible combinations.
-
-```tsx
-type RequestStatus = "idle" | "loading" | "success" | "error";
-
-const [status, setStatus] = useState<RequestStatus>("idle");
-```
-
-### Discriminated Unions
-
-Use a shared `status` property to differentiate state shapes, ensuring type safety and consistent state representation.
-
-```tsx
-type RequestState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "success"; data: Data }
-  | { status: "error"; error: Error };
-
-const [state, setState] = useState<RequestState>({ status: "idle" });
-
-// TypeScript narrows the type automatically
-if (state.status === "success") {
-  console.log(state.data); // ✓ data is available
-}
-```
-
-### Type States
-
-Enforce data consistency by ensuring certain properties only exist in specific state conditions. This prevents runtime errors and provides compile-time type checking.
-
-```tsx
-type FormState =
-  | { submitted: false; values: FormValues }
-  | { submitted: true; values: FormValues; response: ServerResponse };
-```
-
-## Choosing a Third-Party State Management Library
-
-### When You Need One
-
-Look for these signs:
-
-- Over-relying on React Context for frequently changing values
-- Prop drilling across many component layers
-- Scattered state logic that's hard to follow
-- State synchronization issues between components
-- Frequent unnecessary re-renders
-
-### Two Main Approaches
-
-| Approach                                                | Characteristics                                                                 | Best For                                                                |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| **Store-based** (e.g. Zustand, Redux)                   | Centralized state, controlled transitions via actions/events, indirect mutation | Complex logic, strict state control                                     |
-| **Atomic / Signal-based** (e.g. Jotai, Recoil, Signals) | Decentralized atoms, reactive subscriptions, updatable from anywhere            | Data that changes freely from external sources, fine-grained reactivity |
-
-### Decision Guide
-
-- **Complex logic with controlled transitions** → Store-based. Prevents arbitrary changes; state flows through defined actions.
-- **Data that changes freely from external sources** (e.g. real-time updates, flash sales) → Atomic/signal-based. Allows updating from anywhere and combining/deriving state from multiple sources.
-
-### Performance: Fine-Grained Subscriptions
-
-Use selectors (e.g. `useSelector`, Zustand selectors) so components only re-render when the specific slice of state they consume changes, rather than on every store update.
-
-```tsx
-// Only re-renders when `count` changes, not the entire store
-const count = useStore((state) => state.count);
-```
-
-## Common Anti-Patterns
-
-| Anti-Pattern                                                                                          | Problem                                                     | Fix                                                                        |
-| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `const [isLoading, setIsLoading] = useState(false)` + `const [isError, setIsError] = useState(false)` | Impossible states (`isLoading && isError` can both be true) | Use a single `status` union: `'idle' \| 'loading' \| 'success' \| 'error'` |
-| `useEffect` that syncs state A into state B                                                           | Creates render cascades and stale data                      | Derive B from A inline during render                                       |
-| `useState` for a value only read in event handlers                                                    | Causes re-renders on every update with no visual change     | Use `useRef`                                                               |
-| Storing full objects when only an ID is needed                                                        | Stale references when source array updates                  | Store the ID, derive the object via `.find()`                              |
-| `useContext` for high-frequency updates                                                               | All consumers re-render on every change                     | Use a store with selectors or split into separate contexts                 |
-
-## Procedure
-
-When refactoring state in a component:
-
-1. **Inventory all state variables.** List every `useState` call and what triggers each update.
-2. **Group related state.** Merge variables that always update together into a single object.
-3. **Eliminate derived state.** Remove any state that can be computed from other state or props; compute it inline.
-4. **Swap non-rendering values to refs.** Timer IDs, scroll positions, previous values — move them to `useRef`.
-5. **Check for impossible states.** If multiple booleans control a single concept, replace them with a status union type.
-6. **Use discriminated unions.** For multi-shape state, add a `status` discriminator and let TypeScript narrow types.
-7. **Verify update patterns.** Ensure all object/array updates use the callback form `setState(prev => ...)`.
-8. **Evaluate library need.** If prop drilling, context overuse, or sync issues persist, choose a store-based or atomic library per the decision guide above.
+- `references/antipatterns.md` — derived state, refs vs state, redundant state, and cascading effects → event-driven reducer (with before/after code).
+- `references/finite-state.md` — discriminated unions, `useReducer`, Context + custom hooks, type-states, grouping state.
+- `references/forms.md` — FormData + server actions + `useActionState` + Zod; when to prefer controlled `useState` instead.
+- `references/url-state.md` — `nuqs` for type-safe, shareable URL query state.
+- `references/server-state.md` — TanStack Query: query keys, caching, mutations, why not `useEffect`.
+- `references/normalization.md` — flat vs nested data, entities-by-ID, why it speeds updates and re-renders.
+- `references/external-stores.md` — stores vs atoms, choosing a library, selectors, `useSyncExternalStore`.
+- `references/modeling.md` — entity/sequence/state diagrams to do before building.
+- `references/testing.md` — testing reducers and pure logic instead of UI.
