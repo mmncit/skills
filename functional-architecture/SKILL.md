@@ -50,13 +50,16 @@ Favour composable functions, **mostly**. Generalise a function when a second cal
 
 ## Where to go next
 
-This skill covers turning procedures into composed functions. Three neighbouring problems have their own skills — use them rather than re-deriving the pattern here:
+This skill covers turning procedures into composed functions. Four neighbouring problems have their own skills — use them rather than re-deriving the pattern here:
 
 | The code you're looking at | Use |
 |---|---|
 | A family of objects that vary by a `type` / `kind` / `__class__` field | `entity-factory` |
 | An accumulation loop, an awkward `reduce`, several reducers to merge, or a deep-nested update | `algebraic-composition` |
 | Throwing, `try/catch`, `async` I/O, or logic you can't test without stubbing the world | `effects-as-values` |
+| A pure rule that's correct here — and duplicated on the other side of an API boundary | `policy-as-data` |
+
+The first three are code-shape problems inside one codebase. The last is a *boundary* problem: extracting a clean `canCancelOrder(order)` is this skill's job, but if the client has its own copy of it, purity doesn't stop the two from drifting.
 
 `references/refactor-recipes.md` has before/after TypeScript for each rung of the ladder — class to module, imperative loop to pipeline, flag parameter to composition, and mutation to transformation. `references/composition-in-typescript.md` covers typing `pipe`, curried factories, generic stages, and the readability limits of point-free style.
 
