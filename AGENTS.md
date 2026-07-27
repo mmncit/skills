@@ -1,6 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
 
-Guidance for Claude Code and other agents working in this repository.
+Guidance for Claude Code and other coding agents working in this repository.
+
+> **This file is deliberately not named `CLAUDE.md`.** This is a public, vendor-neutral repo and `CLAUDE*` is gitignored to keep it that way. Do not create a `CLAUDE.md` here — put repo conventions in this file instead. (A gitignored local `CLAUDE.md` symlink to this file is fine on an individual machine.)
 
 ## What this repo is
 
