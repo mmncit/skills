@@ -12,7 +12,7 @@ It starts from a diagnostic — *can I run this twice? does call order matter? d
 | `references/refactor-recipes.md` | Before/after TypeScript for each rung — class to module, loop to pipeline, flags to composition, mutation to transformation, order-dependent init to explicit dependencies. |
 | `references/composition-in-typescript.md` | Typing `pipe` past its overload ceiling, curried factories vs `curry` helpers, generic stages, type guards, the readability limits of point-free style. |
 
-## It's the front door of four
+## It's the front door of five
 
 This skill covers turning procedures into composed functions, and routes to a sibling when the code is a more specific shape:
 
@@ -21,6 +21,9 @@ This skill covers turning procedures into composed functions, and routes to a si
 | A family of objects varying by a `type` / `kind` / `__class__` field | `entity-factory` |
 | An accumulation loop, an awkward `reduce`, reducers to merge, a deep-nested update | `algebraic-composition` |
 | Throwing, `try/catch`, async I/O, logic you can't test without stubbing the world | `effects-as-values` |
+| A pure rule duplicated on the other side of an API boundary | `policy-as-data` |
+
+The first three are code-shape problems within one codebase; the last is a boundary problem — a rule can be perfectly pure and still exist twice.
 
 ## When it fires
 
