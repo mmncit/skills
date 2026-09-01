@@ -140,6 +140,7 @@ One path definition serves both read and update, and it's reusable across every 
 
 - Combining values that might be **absent or failed** — collecting all validation errors instead of short-circuiting on the first — is a monoid over a result type. See the `effects-as-values` skill.
 - The surrounding refactor (procedures to composed functions, `pipe`, currying) is in `functional-architecture`.
+- Applying one function to the *inside* of a domain wrapper (a long/short form, a per-locale string) rather than folding many values into one is the other axis — see `domain-functors`.
 - `references/catalogue.md` has typed TypeScript implementations of `foldMap`, the standard combiners, record-of-monoids for single-pass multi-aggregation, endomorphism composition, and a property-test template for the laws.
 
 ## When NOT to use it
