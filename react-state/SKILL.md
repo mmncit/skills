@@ -52,7 +52,7 @@ const [state, setState] = useState<State>({ status: 'idle' });
 if (state.status === 'success') state.data; // ✓ TypeScript narrows; data only exists here
 ```
 
-See `references/finite-state.md` for discriminated unions, `useReducer`, Context + custom hooks, and type-states.
+See `references/finite-state.md` for discriminated unions, `useReducer`, Context + custom hooks, and type-states. For the non-React version of the same move — spotting a bag of correlated optional fields anywhere in the codebase, choosing the discriminant, narrowing before destructuring, and exhaustiveness with `never` — use `discriminated-unions`.
 
 ## Refactor procedure
 
