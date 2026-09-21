@@ -71,9 +71,10 @@ No dispatcher or consumer changes. Kinds may even **share a builder** — point 
 
 ## Where to go next
 
-`functional-architecture` is the front door for this family of skills. The four that bear directly on this pattern:
+`functional-architecture` is the front door for this family of skills. The five that bear directly on this pattern:
 
 - **`functional-architecture`** — the `pipe` and currying mechanics `withDefaults` and `pipe(translate, generateState, …)` are built on, and the wider refactor from procedures to composed functions.
+- **`discriminated-unions`** — the step before this one. A registry is worth building once the *type* is a proper tagged union; if the variants are still an object with optional fields that correlate, fix the type first and the registry's output contract falls out of it.
 - **`algebraic-composition`** — merging defaults with overrides *is* a combine operation, and layering several of them is a fold. Worth reading if the shallow spread in `withDefaults` has started losing nested keys, or if several builders each need the same options object assembled from layers.
 - **`domain-functors`** — the neighbouring shape, easy to confuse. A registry dispatches on a *kind* to build **different** outputs; a functor applies **the same** function to every slot of one wrapper. If your variants all carry the same payload and differ only in how it's held, you want a `map`, not a registry.
 - **`effects-as-values`** — builders must stay pure for any of this to hold. When one genuinely needs I/O, that skill covers where to put the boundary rather than letting a fetch leak into the registry.
