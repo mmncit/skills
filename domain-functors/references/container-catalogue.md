@@ -61,6 +61,6 @@ Steps 1–4 are usually one short module. If a wrapper is taking more than that,
 | "Collect all the validation errors" | This is a fold with an error-accumulating combiner, not a functor | `algebraic-composition` |
 | A value plus an accumulated log | Same — the log is the monoid, and the plumbing rarely earns its keep in TypeScript | `algebraic-composition` |
 | `Array`, `Promise`, `Map`, `Set` | Already have `map`, or a one-line equivalent | the standard library |
-| `Draft` \| `Published` \| `Archived` | Different fields per case — a state machine wanting exhaustive `switch`, not one function applied to every slot | `entity-factory` for the builder side |
+| `Draft` \| `Published` \| `Archived` | Different fields per case — a state machine wanting exhaustive `switch`, not one function applied to every slot | `discriminated-unions`, then `entity-factory` for the builder side |
 
 A container earns its own module when **the same slot-walking branch is being rewritten for each new operation**. If that isn't happening, you have a type, not a functor.
