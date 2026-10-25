@@ -88,6 +88,10 @@ It has no dependencies and checks frontmatter against the contract, that every s
 
 That last group is not hypothetical. A new skill missing from the routing table, and a skill with no outbound links leaving the reader nowhere to go, have both happened here. CI runs the frontmatter half separately in [publish.yml](.github/workflows/publish.yml).
 
+## License
+
+[MIT](LICENSE). Copy a skill into your own repository, adapt it to your codebase's conventions, or lift the parts that apply and leave the rest.
+
 ## Credit
 
 `domain-functors` is derived from Adam Dueck's [Practical uses for functional programming with NLP](https://adueck.github.io/blog/practical-uses-for-functional-programming-with-nlp/), with a tagged encoding in place of the post's bare union.
