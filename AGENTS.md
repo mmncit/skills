@@ -47,7 +47,7 @@ bodies predate that rule and are left as they are.
 - `name` does not exactly equal the containing folder name, or
 - `description` is absent.
 
-Malformed YAML — most often an unquoted `: ` inside `description` — makes the skills CLI *silently skip* the skill at publish time, so it never registers. Wrap the description in double quotes.
+Malformed YAML — most often an unquoted `: ` inside `description` — makes the skills CLI *silently skip* the skill at publish time, so it never registers. Wrap the description in double quotes, on a single line; `scripts/check-skills.mjs` enforces both, and a folded or multi-line description will fail it even though YAML would accept one.
 
 **The `description` is the recall surface, not a summary.** It is the only text an agent sees when deciding whether to load the skill, so it must enumerate concrete symptoms and the phrasings a user would actually type — not describe the document. Existing descriptions run 800–1100 characters and read as a list of trigger conditions. Match that.
 

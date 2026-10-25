@@ -30,7 +30,7 @@ The same status or permission check in a backend handler and a frontend `disable
 
 ## When it does not
 
-A rule with no server side, such as a pure formatting or display concern, has no boundary to cross. Context-free helpers should be shared as code. When the client and server ship together as one deployable unit the drift this guards against cannot happen. And rung 3 adds a serialization format and an evaluator to maintain, so do not climb there to avoid a second round trip you have not measured.
+A presentational rule, such as field ordering or which columns show by default, was never a domain rule and the server has no authority over it. A server-rendered app that ships the template and the handler in one build genuinely cannot drift, so the premise does not hold. When the decision must be instant and the answer is cheap, such as disabling submit while a required field is empty, ship the constraint rather than waiting on a round trip for the decision. A policy that is not expressible as data, such as a `zod` schema full of closures and refinements, makes a shared module the honest answer; take the versioning cost knowingly. Putting twelve `allowedActions` arrays on a list endpoint for the sake of one admin view is a real payload cost. And shipping the policy tells the client what the rules are, which is usually fine because the server still enforces them, but not when the rule set itself is sensitive.
 
 ## Siblings
 

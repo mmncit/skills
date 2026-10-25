@@ -12,7 +12,7 @@ Install all eight into Claude Code, globally:
 npx skills add mmncit/skills -g -a claude-code -s '*' -y
 ```
 
-That copies each skill, reference files included, into `~/.claude/skills/<name>/`. Restart Claude Code afterwards: skills are enumerated when a session starts.
+That copies each skill, reference files included, into `~/.claude/skills/<name>/`. A newly installed skill is usually picked up straight away; start a new session if one does not appear.
 
 One skill instead of all eight:
 
@@ -22,7 +22,7 @@ npx skills add mmncit/skills -g -a claude-code -s functional-architecture -y
 
 Drop `-g` to install into the current project at `./.claude/skills/` instead of your home directory. Use that when the guidance should travel with the repo rather than follow you between projects.
 
-For an agent other than Claude Code, swap the `-a` value. Running `npx skills add --help` prints the full list of supported targets, which is long and includes Cursor, Codex, Gemini CLI, Copilot, Zed and Windsurf.
+For an agent other than Claude Code, swap the `-a` value. The identifiers are not product names, which is worth knowing before you lose ten minutes to it: `-a claude` is rejected outright, and the one that works is `claude-code`. Passing an unknown value makes the CLI print every target it accepts, among them `cursor`, `codex`, `gemini-cli`, `github-copilot`, `zed` and `windsurf`.
 
 ## The catalogue
 
@@ -43,9 +43,9 @@ Every skill ends with a section on when not to use it. Those sections are the lo
 
 Four of these skills deal with types that vary, and the boundaries between them are the thing people get wrong.
 
-`discriminated-unions` comes first. It is about the *type*: a bag of correlated optional fields becomes a union of arms tagged by a discriminant. Until that is done, the other three have nothing solid to stand on.
+`discriminated-unions` is about the *type*: a bag of correlated optional fields becomes a union of arms tagged by a discriminant.
 
-`entity-factory` is about *building* values once the union exists. Many kinds, one shared output contract, a registry instead of a growing `switch`. The arms produce different shapes.
+`entity-factory` is about *building* values of such a union. Many kinds, one shared output contract, a registry instead of a growing `switch`. These two are ordered: a registry is worth building once the type is a proper tagged union, so if the variants are still an object with optional fields, fix the type first. The other two have no such dependency. A sum or a config merge needs no union at all, and a wrapper with one shape, such as a value per locale, needs no discriminant.
 
 `domain-functors` is about *mapping over* one wrapper whose slots all hold the same kind of payload. The arms are not different things, they are the same thing held two or three ways, so one `map` serves every operation.
 
@@ -72,7 +72,7 @@ Reference files under `references/` are not loaded with the skill. The `SKILL.md
 └── references/       detail, loaded on demand
 ```
 
-`SKILL.md` frontmatter is exactly two keys, `name` and `description`, and `name` must equal the folder name. CI checks this with a real YAML parser on every push, because malformed frontmatter makes the skills CLI skip a skill silently at publish time rather than failing loudly.
+`SKILL.md` frontmatter is exactly two keys, `name` and `description`, and `name` must equal the folder name. A push to `main` that touches any `SKILL.md` runs [publish.yml](.github/workflows/publish.yml), which parses the frontmatter with a real YAML parser before registering anything. Malformed frontmatter makes the skills CLI skip a skill silently at publish time rather than failing loudly, which is the reason for the check.
 
 ## Contributing
 

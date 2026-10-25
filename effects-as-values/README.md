@@ -21,8 +21,8 @@ Most codebases should stop at 2 or 3. TypeScript has no higher-kinded types, so 
 | File | What it is |
 |---|---|
 | `SKILL.md` | The two symptoms, the five rungs with the stopping point marked, adoption order in an existing codebase, and when not to use it. |
-| `references/result-and-task.md` | `Result` and `Task` in full: constructors, `map`/`flatMap`, combinators, typed error unions, and the interop seams with promises. |
-| `references/injected-effects.md` | Rung 4 in practice: passing the boundary as a parameter, testing without module mocks, and the useful half of the interpreter idea. |
+| `references/result-and-task.md` | Dependency-free implementations of all three types: `Result`, `Task` for deferred async, `Validated` for accumulating every failure, and a section on choosing between them. |
+| `references/injected-effects.md` | Rung 4 end to end: the capability record, the test double, a recording interpreter that asserts the effect sequence, how it compares to module mocking, composing capabilities, and when a plain parameter is enough. |
 
 ## When it fires
 

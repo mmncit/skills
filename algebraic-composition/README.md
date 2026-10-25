@@ -21,7 +21,7 @@ Subtraction and "average" fail the first one. Folding them produces results that
 |---|---|
 | `SKILL.md` | The laws, the refactor from loop to named combiner, composing state updaters, nested updates with lenses, and when not to use it. |
 | `references/catalogue.md` | Typed implementations of `foldMap`, the standard combiners (sum, all, any, min, max, first-success, merge), record-of-monoids for single-pass multi-aggregation, endomorphism composition, and a property-test template for the laws. |
-| `references/lenses.md` | Typed lenses for reading and updating nested structures, and where they start paying for themselves. |
+| `references/lenses.md` | Lenses as a composable getter and setter pair: `view`, `set` and `over`, all copying rather than mutating, replacing spread ladders and repeated path strings with one reusable definition. |
 
 ## When it fires
 
