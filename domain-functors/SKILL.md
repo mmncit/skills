@@ -155,4 +155,4 @@ It passes the composition law — which is exactly why a suite that checks only 
 - **The slots need genuinely different operations.** If the long form is truncated and the short form is expanded, `map` is the wrong tool — it exists to apply *the same* function to every slot, and forcing it hides the asymmetry.
 - **Arrays, promises and `Map` already have this.** Don't wrap something to give it a `map` it already has.
 - **Don't rename `map` to `fmap`.** Call it `map` (or `mapVariants` where a bare `map` would be ambiguous at the call site), keep it in the container's own module, and skip the vocabulary lesson in the code — the laws matter, the jargon doesn't.
-- **The wrapper is really a discriminated union of different things.** `Draft | Published | Archived` carrying different fields is a state machine, not a container. It wants exhaustive matching, not `map`.
+- **The wrapper is really a discriminated union of different things.** `Draft | Published | Archived` carrying different fields is a state machine, not a container. It wants exhaustive matching, not `map`; see `discriminated-unions`.

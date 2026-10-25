@@ -85,6 +85,14 @@ When asked to refactor or review state in a component, work through these in ord
 | `useEffect` + `useState` to track `navigator.onLine` etc. | External store synced manually | `useSyncExternalStore` (rung 5) |
 | Whole Context re-renders all consumers | High-frequency value in Context | Store with selectors, or split contexts |
 
+## When NOT to use it
+
+- A component with two or three `useState` calls that nobody is confused by. The ladder is for state that has started misbehaving, not a tax on every component.
+- Server Components holding no client state. They are outside the ladder entirely, and reaching for a client store to share data between them is the wrong axis.
+- Rung 7 before rungs 1 to 6. A store will not fix re-renders caused by derived state or by server data kept in `useState`; it will hide them one layer further down.
+- Normalizing data whose shape is still changing. Entities keyed by ID pay off once the same list is updated from several places, not in a prototype.
+- The same modelling problem outside React. Correlated optional fields, choosing a discriminant and exhaustiveness are `discriminated-unions`, which is framework-agnostic.
+
 ## Reference files
 
 Read the relevant file before doing deep work in that area:

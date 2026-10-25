@@ -163,7 +163,7 @@ Callers now get an error at the call site for the missing `buttonText` instead o
 
 ## Where to go next
 
-- **`react-state`** — where a piece of state should live, and the React-specific version of this: collapsing `isLoading`/`isError` booleans into a `status` union, `useReducer` action types, and type-states. Its `references/finite-state.md` is the React-side companion to this skill's rungs 3 and 4.
+- **`react-state`** — where a piece of state should live, and the React-specific version of this: collapsing `isLoading`/`isError` booleans into a `status` union, `useReducer` action types, and type-states. Its `react-state/references/finite-state.md` is the React-side companion to this skill's rungs 3 and 4.
 - **`entity-factory`** — the next question after you have a union with several arms: how to *build* values of it. When the arms share an output contract and keep multiplying, a keyed registry beats a growing `switch`; that skill covers the trade-off in both directions.
 - **`algebraic-composition`** — when the arms need to be *combined* rather than dispatched on (folding a list of events into a state, merging two partial results).
 - **`functional-architecture`** — the front door for this family of skills, and the source of the `pipe` mechanics the decode functions above fit into.

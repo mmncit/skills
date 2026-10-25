@@ -29,9 +29,16 @@ If that prints anything but `mmncit@gmail.com`, fix it locally (never `--global`
 ```
 <skill-name>/
 ├── SKILL.md          required
-├── README.md         optional — GitHub-facing summary
+├── README.md         required — the human-facing page for that skill
 └── references/       optional — deferred detail, loaded on demand
 ```
+
+Every skill has a README and they all follow one template: what it is, the ladder or
+shape at a glance, a Contents table, "When it fires", "When it does not", a Siblings
+table of relative links, and a Credit section where a source applies. Copy the nearest
+existing one rather than inventing a new arrangement. READMEs are written in the repo
+owner's prose style: no em or en dashes, and no bolded lead-in lists. The SKILL.md
+bodies predate that rule and are left as they are.
 
 **`SKILL.md` frontmatter is exactly two keys, `name` and `description`.** CI parses it with a real YAML parser and fails the build if:
 
@@ -40,7 +47,7 @@ If that prints anything but `mmncit@gmail.com`, fix it locally (never `--global`
 - `name` does not exactly equal the containing folder name, or
 - `description` is absent.
 
-Malformed YAML — most often an unquoted `: ` inside `description` — makes the skills CLI *silently skip* the skill at publish time, so it never registers. Wrap the description in double quotes.
+Malformed YAML — most often an unquoted `: ` inside `description` — makes the skills CLI *silently skip* the skill at publish time, so it never registers. Wrap the description in double quotes, on a single line; `scripts/check-skills.mjs` enforces both, and a folded or multi-line description will fail it even though YAML would accept one.
 
 **The `description` is the recall surface, not a summary.** It is the only text an agent sees when deciding whether to load the skill, so it must enumerate concrete symptoms and the phrasings a user would actually type — not describe the document. Existing descriptions run 800–1100 characters and read as a list of trigger conditions. Match that.
 
@@ -58,7 +65,21 @@ Malformed YAML — most often an unquoted `: ` inside `description` — makes th
 
 ## Validating locally
 
-CI runs on push; to check first, without writing `node_modules` into this repo:
+Run this before pushing. It has no dependencies and takes well under a second:
+
+```bash
+node scripts/check-skills.mjs
+```
+
+It checks frontmatter against the contract above, that every skill has a README and a
+"When NOT to use it" section, that every `references/` file is pointed at and every
+pointer resolves, that sibling links name real skills, that no skill is a dead end with
+zero outbound links, and that both the front door's routing table and the root README
+list every skill. The last two are the checks that exist because that drift has already
+shipped twice.
+
+The CI job runs only the frontmatter half, with a real YAML parser. To reproduce just
+that part, without writing `node_modules` into this repo:
 
 ```bash
 npm i --no-save --prefix /tmp/skillcheck js-yaml@4 >/dev/null && node -e "const y=require('/tmp/skillcheck/node_modules/js-yaml'),fs=require('fs'),p=require('path');let bad=0;for(const d of fs.readdirSync('.',{withFileTypes:true})){if(!d.isDirectory()||d.name.startsWith('.')||d.name==='temp')continue;const s=p.join(d.name,'SKILL.md');if(!fs.existsSync(s))continue;const m=fs.readFileSync(s,'utf8').match(/^---\n([\s\S]*?)\n---/);try{if(!m)throw new Error('no frontmatter');const fm=y.load(m[1]);if(fm.name!==d.name)throw new Error(\`name '\${fm.name}' != folder\`);if(!fm.description)throw new Error('no description');console.log('  ok  '+fm.name)}catch(e){console.log('  ERR '+s+': '+e.message);bad=1}}process.exit(bad)"
