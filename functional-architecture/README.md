@@ -23,7 +23,7 @@ A unit that answers yes, no, no, and "just its parameters" is already a function
 | `references/refactor-recipes.md` | Before and after TypeScript for each rung: class to module, loop to pipeline, flags to composition, mutation to transformation, order-dependent init to explicit dependencies. |
 | `references/composition-in-typescript.md` | Typing `pipe` past its overload ceiling, curried factories versus `curry` helpers, generic stages, type guards, and the readability limits of point-free style. |
 
-## The front door of eight
+## The front door of seven
 
 This skill covers turning procedures into composed functions, and routes to a sibling when the code is a more specific shape.
 
@@ -34,14 +34,13 @@ This skill covers turning procedures into composed functions, and routes to a si
 | An accumulation loop, an awkward `reduce`, reducers to merge, a deep-nested update | [algebraic-composition](../algebraic-composition/) |
 | A wrapper with fixed slots that re-branches in every operation | [domain-functors](../domain-functors/) |
 | Throwing, `try/catch`, async I/O, logic you cannot test without stubbing the world | [effects-as-values](../effects-as-values/) |
-| `as` casts, `any`, non-null assertions, or JSON and env vars used without parsing | [strong-typescript](../strong-typescript/) |
 | A pure rule duplicated on the other side of an API boundary | [policy-as-data](../policy-as-data/) |
 
-Five of these are code-shape problems within one codebase. `strong-typescript` is about what the compiler is allowed to believe, and belongs to the design family. The last is a boundary problem: a rule can be perfectly pure and still exist twice.
+The first five are code-shape problems within one codebase. The last is a boundary problem: a rule can be perfectly pure and still exist twice.
 
 [react-state](../react-state/) sits outside the family. It is reached from `discriminated-unions`, which is the modelling move the two share.
 
-The design skills are a second family with [architect](../architect/) as their front door. They cover how a change gets made rather than the shape of the code: sketching it first, comparing attempts, attacking the result, and building it test first.
+The design skills are a second family with [architect](../architect/) as their front door. They cover how a change gets made rather than the shape of the code: sketching it first, comparing attempts, attacking the result, and building it test first. Casts, `any` and input nobody parsed go to [strong-typescript](../strong-typescript/) in that family.
 
 ## When it fires
 

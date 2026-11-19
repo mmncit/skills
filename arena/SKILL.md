@@ -22,15 +22,15 @@ Every candidate gets the same brief, so the brief is the contract.
 
 ## Phase B: fan out
 
-An arena costs roughly one full attempt per seat plus a judge. Unless the user asked for one by name, say how many seats you are about to launch and wait for a yes.
+An arena costs roughly one full attempt per seat plus a judge. Unless the user asked for one by name, say how many seats you are about to launch and wait for a yes. If nobody is there to answer, launch only when whoever started the run asked for an arena.
 
-Launch every candidate in one message so they run in parallel. In Claude Code each one is a fresh Agent call with `model` set to its seat, and with `isolation: "worktree"` when it writes code. Do not fork your own context for a seat: a fork ignores `model` and starts from your reasoning, which is the bias the arena exists to avoid. Each brief carries the task, the grounding to read, its own output path, and an instruction to finish with a short rationale naming the alternatives it considered and why it rejected them.
+Launch every candidate in one message so they run in parallel. In Claude Code each one is a fresh Agent call with `model` set to its seat, and with `isolation: "worktree"` when it writes code. Do not fork your own context for a seat: a fork ignores `model` and starts from your reasoning, so its attempt is not independent. Each brief carries the task, the grounding to read, its own output path, and an instruction to finish with a short rationale naming the alternatives it considered and why it rejected them.
 
 If a candidate produces nothing usable, continue with the rest and note the dropout.
 
 ## Phase C: judge
 
-When every candidate is done, give a fresh read-only subagent, not a fork, the rubric and the candidates relabelled `A`, `B`, `C` in shuffled order, with any model names removed. It scores each candidate on each criterion and recommends a base. Use a model other than your own where you can.
+When every candidate is done, give a fresh subagent, not a fork, told to read and score and to edit nothing, the rubric and the candidates relabelled `A`, `B`, `C` in shuffled order, with any model names removed. It scores each candidate on each criterion and recommends a base. Use a model other than your own where you can.
 
 All the seats are Claude, so the judge brings a fresh context and blindness, not a different set of training biases. It is also one of the seat models, and a model can recognise and favour its own candidate even under a neutral label. Treat its agreement as useful but weaker evidence than your own criterion-by-criterion read. With fewer than two candidates left, skip the judge and say so.
 
@@ -44,7 +44,7 @@ Take the base a future maintainer can extend most easily without breaking its in
 
 Walk each losing candidate once more for what is worth porting, usually one or two things each, not most of it. Fold each graft in by hand so the result still reads as one design under one mental model. Pasting pieces from three designs produces a fourth design nobody chose.
 
-If the candidates converged on one shape, that is strong agreement: ship the consensus and skip the graft. If they diverged wildly, the brief was under-specified. Reframe and rerun rather than averaging the divergence.
+If the candidates converged on one shape, ship the consensus and skip the graft. Seats from one vendor can converge on a shared blind spot, so treat convergence as good evidence rather than proof, and let verification in Phase F have the last word. If they diverged wildly, the brief was under-specified. Reframe and rerun rather than averaging the divergence, and after two reruns that still diverge, take the divergence to the user as the decision it is.
 
 ## Phase F: verify
 
@@ -69,4 +69,4 @@ One artifact, plus a short note alongside it: the base and why, the judge's verd
 - Coverage work, where each worker needs a different slice (check every package, review every file). That is a plain parallel fan-out with one brief per slice, and there is nothing to pick or graft.
 - Finding defects in a finished change. Candidates are builders and will not try hard to break their own work. Use `interrogate`.
 - A cheap, easily reversed change. The cost is roughly one attempt per seat plus a judge, so three seats cost about four times one attempt.
-- When you cannot read every candidate in full. Picking a base from summaries reintroduces the single-attempt bias the arena exists to remove.
+- When you cannot read every candidate in full. Picking a base from summaries brings back the single-attempt bias.

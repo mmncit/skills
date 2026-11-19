@@ -26,7 +26,7 @@ Work top to bottom. Each step is independently shippable, and most code only nee
 
 1. **Separate the calculation from the effect.** Split every procedure into a pure core that computes a value and a thin shell that performs I/O with it. Read at the top, compute in the middle, write at the bottom. This is the single highest-value move: the core becomes testable with plain values, and the shell shrinks to something you can eyeball.
 2. **Promote hidden inputs to parameters.** Instance fields, imported singletons, clocks and config become explicit arguments. The signature now tells the truth about what the function needs — and the function stops caring who calls it first.
-3. **Make the data flow one-directional with `pipe`.** A procedure that reassigns a local variable five times is a pipeline in disguise. Name each stage as its own exported function and compose them. Every intermediate value gets a name and a type, and each stage becomes independently testable.
+3. **Make the data flow one-directional with `pipe`.** A procedure that reassigns a local variable five times is a pipeline in disguise. Name each stage as its own exported function and compose them. Every intermediate value gets a name and a type, and each stage becomes independently testable. Independently testable is not the same as needing its own test: test the composed pipeline through its entry point first, because the bugs worth catching live in how the stages combine, and keep a per-stage test only where a stage has logic of its own.
 4. **Push configuration to the edges with partial application.** When a stage needs config that the caller of the pipeline knows but the pipeline stage doesn't, curry it: `(config) => (input) => output`. Apply the config once where it's known, and the resulting one-argument function drops into any pipe.
 5. **Replace flags and mode branches with composition.** A function taking `{ normalize?: boolean; withTotals?: boolean }` is several functions wearing one hat, and its body pays the branch cost on every call. Extract each behaviour as its own stage and let the caller compose the variant it wants. Callers gain combinations you never anticipated; the function loses its combinatorial test matrix.
 6. **Replace mutation with narrowed transformation.** Instead of writing into an existing object, build the next value: `pick` the keys you own, spread the changes, return it. Narrowing to a known key set at the boundary also stops unexpected keys from leaking in from persisted or untrusted input.
@@ -50,7 +50,7 @@ Favour composable functions, **mostly**. Generalise a function when a second cal
 
 ## Where to go next
 
-This skill covers turning procedures into composed functions. Seven neighbouring problems have their own skills — use them rather than re-deriving the pattern here:
+This skill covers turning procedures into composed functions. Six neighbouring problems have their own skills — use them rather than re-deriving the pattern here:
 
 | The code you're looking at | Use |
 |---|---|
@@ -59,10 +59,11 @@ This skill covers turning procedures into composed functions. Seven neighbouring
 | A domain type that wraps a value in fixed slots (long/short, per-locale, per-group) and re-branches in every operation | `domain-functors` |
 | Throwing, `try/catch`, `async` I/O, or logic you can't test without stubbing the world | `effects-as-values` |
 | An object whose optional fields only make sense in certain combinations, or booleans encoding a mode | `discriminated-unions` |
-| `as` casts, `any`, non-null assertions, or JSON and env vars used without parsing | `strong-typescript` |
 | A pure rule that's correct here — and duplicated on the other side of an API boundary | `policy-as-data` |
 
-Five of these are code-shape problems inside one codebase. `strong-typescript` is about what the compiler is allowed to believe, and belongs to the design family, whose front door is `architect`. The last is a *boundary* problem: extracting a clean `canCancelOrder(order)` is this skill's job, but if the client has its own copy of it, purity doesn't stop the two from drifting.
+The first five are code-shape problems inside one codebase. The last is a *boundary* problem: extracting a clean `canCancelOrder(order)` is this skill's job, but if the client has its own copy of it, purity doesn't stop the two from drifting.
+
+Two problems sit in the design family, whose front door is `architect`, rather than here. `as` casts, `any`, non-null assertions and input nobody parsed go to `strong-typescript`. A change whose shape is not settled yet, where you would be choosing between a class and a pipeline before any code exists, goes to `architect`.
 
 `references/refactor-recipes.md` has before/after TypeScript for each rung of the ladder — class to module, imperative loop to pipeline, flag parameter to composition, and mutation to transformation. `references/composition-in-typescript.md` covers typing `pipe`, curried factories, generic stages, and the readability limits of point-free style.
 

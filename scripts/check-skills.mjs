@@ -14,7 +14,7 @@ const FRONT_DOOR = "functional-architecture";
 // The design workflow is a second family with its own door. Any skill not listed here
 // defaults to the code-shape family, so a new skill cannot skip routing by omission.
 const DESIGN_DOOR = "architect";
-const DESIGN_FAMILY = new Set(["arena", "interrogate", "tdd", "no-comments", "strong-typescript"]);
+const DESIGN_FAMILY = new Set(["arena", "interrogate", "tdd", "no-comments", "strong-typescript", "claims-check"]);
 // Skills that sit outside the functional-architecture family and are deliberately
 // absent from its routing table. Each still has to be reachable from somewhere.
 const OUTSIDE_FAMILY = new Set(["react-state"]);
@@ -117,23 +117,40 @@ for (const name of skills) {
   if (outbound.size === 0) fail(name, "has no outbound links to any sibling; a reader landing here has nowhere to go");
 }
 
-// Each front door has to route to every skill in its family, in a table row of both its
-// SKILL.md and its README. A mention in prose does not count: a door's prose names
-// siblings in passing, so a deleted table row would otherwise go unnoticed.
-const routesTo = (text, name) =>
-  text.split("\n").some((l) => l.startsWith("|") && (l.includes(`\`${name}\``) || l.includes(`../${name}/`)));
+// Each front door has to route to every skill in its family: in a table row of its SKILL.md,
+// and in the table under its README's "front door of N" heading. Prose does not count, and
+// in the README neither does any other table, because both doors name siblings in passing.
+const tableRows = (text) => text.split("\n").filter((l) => l.startsWith("|") && !/^\|\s*-/.test(l)).slice(1);
+const mentions = (line, name) => line.includes(`\`${name}\``) || line.includes(`../${name}/`);
+const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+const doorSection = (readme) => {
+  const m = readme.match(/^## The front door of (\w+)\n([\s\S]*?)(?=^## |(?![\s\S]))/m);
+  return m ? { count: NUMBER_WORDS.indexOf(m[1]), rows: tableRows(m[2]) } : null;
+};
+
+const doorRows = new Map();
 for (const door of [FRONT_DOOR, DESIGN_DOOR]) {
-  if (!bodies.has(door)) fail("repo", `front door '${door}' not found`);
+  if (!bodies.has(door)) {
+    fail("repo", `front door '${door}' not found`);
+    continue;
+  }
+  const readmePath = join(root, door, "README.md");
+  const section = existsSync(readmePath) ? doorSection(readFileSync(readmePath, "utf8")) : null;
+  if (!section) {
+    fail(`${door}/README.md`, "no '## The front door of N' section with a routing table");
+    continue;
+  }
+  if (section.count !== section.rows.length + 1)
+    fail(`${door}/README.md`, `heading says a front door of ${section.count}, but the table routes to ${section.rows.length} skills plus the door itself`);
+  doorRows.set(door, { skill: tableRows(bodies.get(door)), readme: section.rows });
 }
 for (const name of skills) {
   if (name === FRONT_DOOR || name === DESIGN_DOOR || OUTSIDE_FAMILY.has(name)) continue;
   const door = DESIGN_FAMILY.has(name) ? DESIGN_DOOR : FRONT_DOOR;
-  if (!bodies.has(door)) continue;
-  for (const file of ["SKILL.md", "README.md"]) {
-    const path = join(root, door, file);
-    if (existsSync(path) && !routesTo(readFileSync(path, "utf8"), name))
-      fail(`${door}/${file}`, `routing table does not list '${name}'`);
-  }
+  const rows = doorRows.get(door);
+  if (!rows) continue;
+  if (!rows.skill.some((l) => mentions(l, name))) fail(`${door}/SKILL.md`, `routing table does not list '${name}'`);
+  if (!rows.readme.some((l) => mentions(l, name))) fail(`${door}/README.md`, `front door table does not list '${name}'`);
 }
 
 // The root README has to list every skill, so nothing is invisible from the repo front page.

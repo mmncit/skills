@@ -27,12 +27,23 @@ async function yearlyPrice(id: string) {
 }
 ```
 
-After: the body is `unknown` until something checks it, and the failure the check can find is in the return type. `parsePlan` is rung 2.
+After: the body is `unknown` until something checks it, and every way the call can fail is in the return type. `fetch` and `res.json()` throw, so they are caught at the edge and converted at once, as rung 1 of `effects-as-values` says. `parsePlan` is rung 2.
 
 ```ts
-async function yearlyPrice(id: string): Promise<Result<number, PlanError>> {
-  const res = await fetch(`/api/plans/${id}`);
-  const plan = parsePlan(await res.json());
+type FetchError =
+  | { kind: "httpStatus"; status: number }
+  | { kind: "network"; detail: string };
+
+async function yearlyPrice(id: string): Promise<Result<number, FetchError | PlanError>> {
+  let body: unknown;
+  try {
+    const res = await fetch(`/api/plans/${id}`);
+    if (!res.ok) return err({ kind: "httpStatus", status: res.status });
+    body = await res.json();
+  } catch (e) {
+    return err({ kind: "network", detail: String(e) });
+  }
+  const plan = parsePlan(body);
   return plan.ok ? ok(plan.value.monthlyPrice * 12) : plan;
 }
 ```

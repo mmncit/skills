@@ -24,11 +24,11 @@ Most code needs only the first two. Tagged unions and exhaustive switches are le
 
 ## When it fires
 
-`as` casts · `any` · non-null assertions · "should never happen" throws · a type guard that checks one field · IDs of the same primitive type passed in the wrong order · JSON, env vars or API responses used without parsing · a function that mutates the array it was given · an interface duplicating a schema · several positional arguments of the same type · "how do I make this type-safe" · "how do I get rid of this cast" · "why is this possibly undefined" · "unknown or any" · "satisfies or as" · "should this be readonly" · "which tsconfig flags should we turn on"
+`as` casts · `any` · non-null assertions · silent `?? ""` or `|| []` defaults deep in the code · "should never happen" throws · a type guard that checks one field · IDs of the same primitive type passed in the wrong order · JSON, env vars or API responses used without parsing · a function that mutates the array it was given · an interface duplicating a schema · several positional arguments of the same type · "how do I make this type-safe" · "how do I get rid of this cast" · "unknown or any" · "satisfies or as" · "should this be readonly" · "which tsconfig flags should we turn on"
 
 ## When it does not
 
-Prototype code headed for the bin does not need illegal states made unrepresentable. A brand on a value nobody confuses with another adds a parse step at every construction site for nothing. A constructive type that forces a cast at every call site is worse than parsing once. `readonly` across a library that mutates its arguments means a copy at every call. One boundary does not justify adding a schema library. Turning on `noUncheckedIndexedAccess` across a large codebase in one PR produces hundreds of mechanical `!` additions, so ratchet it. And copies, parse layers and object arguments cost something in per-frame loops.
+Prototype code headed for the bin does not need illegal states made unrepresentable. A brand on a value nobody confuses with another adds a parse step at every construction site for nothing. A constructive type that forces a cast at every call site is worse than parsing once. `readonly` across a library that mutates its arguments means a copy at every call. One boundary does not justify adding a schema library. Turning on `noUncheckedIndexedAccess` across a large codebase in one PR produces hundreds of mechanical `!` additions, so ratchet it. Copies, parse layers and object arguments cost something in per-frame loops.
 
 ## Siblings
 
@@ -44,4 +44,4 @@ Prototype code headed for the bin does not need illegal states made unrepresenta
 
 ## Credit
 
-The rules for casts, guards, brands, constructive types, derived types and object arguments are adapted from the `typescript-best-practices` skill and the type-system and boundary principles in [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, MIT licensed. Unions, exhaustiveness and failure as values follow this repository's own `discriminated-unions` and `effects-as-values`.
+The rules for casts, guards, brands, constructive types, derived types and object arguments are adapted from the `typescript-best-practices` skill and the type-system and boundary principles in [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, MIT licensed. Unions, exhaustiveness and failure as values follow this repository's own `discriminated-unions` and `effects-as-values`. Treating silent defaults like non-null assertions is restated from Addy Osmani's [agent-skills](https://github.com/addyosmani/agent-skills).

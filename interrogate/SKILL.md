@@ -19,16 +19,18 @@ Two symptoms say a change needs this. It passed review and tests, and you still 
 The default is three adversaries, one each on `fable`, `opus` and `sonnet`. All three are Claude, and models from one vendor share blind spots, so each also gets a different line of attack:
 
 - Inputs and boundaries: empty, huge, malformed, duplicated, non-ASCII, out of range, and `null` where the type says it cannot be.
-- State and time: ordering, retries, partial failure, caching, concurrent calls, cleanup after an error, running it twice.
+- State and time: ordering, retries, partial failure, caching, concurrent calls, cleanup after an error, running it twice, and a write to another system that timed out and may or may not have landed.
 - The contract: every caller and consumer of what changed, including the ones the change never mentions, and whether each still gets what it relied on.
 
-Three adversaries cost roughly three full reviews. Unless the user asked for this skill by name, say what you are about to launch and wait for a yes.
+Three adversaries cost roughly three full reviews. Unless the user asked for this skill by name, say what you are about to launch and wait for a yes. If nobody is there to answer, launch only when whoever started the run asked for it.
 
-Give each adversary its own worktree. A worktree starts from a commit, so uncommitted work does not come with it. Save the scope as a patch first, new files included:
+Give each adversary its own worktree. A worktree starts from a commit, so uncommitted work does not come with it. Save the scope as a patch first, from the repository root so new files keep their full paths, and to a file of its own so two runs cannot overwrite each other:
 
 ```bash
-git diff HEAD --binary > /tmp/interrogate.patch
-git ls-files --others --exclude-standard -z | xargs -0 -n1 git diff --no-index --binary /dev/null >> /tmp/interrogate.patch || true
+cd "$(git rev-parse --show-toplevel)"
+patch="$(mktemp "${TMPDIR:-/tmp}/interrogate.XXXXXX")"
+git diff HEAD --binary > "$patch"
+git ls-files --others --exclude-standard -z | xargs -0 -n1 git diff --no-index --binary /dev/null >> "$patch" || true
 ```
 
 Make applying that patch with `git apply`, then checking `git status`, the first step of every brief. In Claude Code each adversary is a fresh Agent call with `model` set and `isolation: "worktree"`. Do not fork your own context for this: a fork ignores `model` and starts out agreeing with you. Launch them all in one message.
@@ -37,11 +39,11 @@ If your harness cannot set a model per subagent, run all three lines of attack o
 
 Each adversary gets the scope, the intent, its line of attack, and this brief verbatim:
 
-> Break this change. Prove each finding with a run against the real code: a failing test, a reproduction script, or command output that shows the wrong behaviour. For a design, run a prototype or probe the current tree. Keep reproductions in your own worktree. Report each finding with a title, the exact command, the output it printed, and the output the intent requires. Leave out anything you did not run, which covers style, naming, structure, and risks that need some future change to matter. No findings is a valid result.
+> Your job is to make this change fail. A finding counts only if something you ran against the real code shows it: a test that fails, a script that reproduces the problem, or a command whose output is wrong. For a design, build a small prototype or probe the current tree. Work only in your own worktree. For each finding give a short title, the command you ran, what it printed, and what the intent says it should have printed. Report nothing you did not run, so no comments on style, naming or structure, and no risks that need some later change before they bite. Finding nothing is an acceptable answer.
 
 ## Verify
 
-Rerun every reported command yourself, in that adversary's worktree. Keep a finding when the output shows the failure and the failure breaks the intent, including its unwritten half. Drop findings whose command does not reproduce. Run the survivors on the merge base too: a failure that was already there before the change is pre-existing, so list it separately rather than as a finding. Merge findings that share a root cause, and keep a list of which adversaries found each one.
+Rerun every reported command yourself, in that adversary's worktree. Keep a finding when the output shows the failure and the failure breaks the intent, including its unwritten half. Drop findings whose command does not reproduce, and findings that only hold by misreading the intent; note the misreading, because it may mean the intent was badly worded. Run the survivors on the merge base too: a failure that was already there before the change is pre-existing, so list it separately rather than as a finding. Merge findings that share a root cause, and keep a list of which adversaries found each one.
 
 Unlike an arena, there is no base to pick and no graft. Adversaries find different failures, so the verdict keeps every verified finding rather than choosing one adversary's list.
 
@@ -54,6 +56,8 @@ Unlike an arena, there is no base to pick and no graft. Adversaries find differe
 
 Apply nothing. The fix is a separate decision, and often a `tdd` loop that turns a finding's command into a regression test.
 
+Afterwards, every verified finding gets one of three answers, so none is dropped without a trace. Fix it, naming the commit or the test that closes it. Rebut it, with evidence that it misread the intent. Or defer it, naming the ticket and what would reopen it. Before applying a remedy an adversary suggested, check it against everything else the intent requires, because a fix for one finding can break a constraint named in another. These answers are a record for the PR, not a merge gate.
+
 ## Where to go next
 
 | Situation | Skill |
@@ -62,6 +66,7 @@ Apply nothing. The fix is a separate decision, and often a `tdd` loop that turns
 | Findings that trace back to the shape rather than a line | `architect` |
 | Two designs on the table and no code yet | `arena` |
 | Findings about unparsed input, unchecked casts or a silent missing case | `strong-typescript` |
+| The PR description and the answers to each finding, checked against the code | `claims-check` |
 
 ## When NOT to use it
 

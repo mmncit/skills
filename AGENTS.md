@@ -61,11 +61,11 @@ Malformed YAML — most often an unquoted `: ` inside `description` — makes th
 
 ## Cross-linking
 
-There are two families, each with a front door that carries a routing table in both its `SKILL.md` and `README.md`. `functional-architecture` is the door for the code-shape skills. `architect` is the door for the design skills: `arena`, `interrogate`, `tdd`, `strong-typescript` and `no-comments`.
+There are two families, each with a front door that carries a routing table in both its `SKILL.md` and `README.md`. `functional-architecture` is the door for the code-shape skills. `architect` is the door for the design skills: `arena`, `interrogate`, `tdd`, `strong-typescript`, `no-comments` and `claims-check`. A door's README keeps its routing table under a `## The front door of N` heading, where N counts the routed skills plus the door itself, and has no second table listing the same skills.
 
 **When adding a skill, add a row to its family's door** and update that door's "front door of N" heading, or the new skill is undiscoverable from the entry point. A new design skill also goes into `DESIGN_FAMILY` in `scripts/check-skills.mjs`; anything not listed there is checked against `functional-architecture`. Add a reciprocal link in the new skill's "Where to go next".
 
-The design skills credit [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, MIT licensed, in their README Credit sections and the root README. Keep that credit when editing them. Their multi-model steps use Claude models only (`fable`, `opus`, `sonnet`), by the repository owner's choice; do not add steps that shell out to other vendors' CLIs.
+The design skills credit [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, MIT licensed, in their README Credit sections and the root README. Keep that credit when editing them. Ideas from Matt Pocock's skills, Addy Osmani's agent-skills and rfxn's rdf are restated in this repository's own words and credited the same way. rdf is GPL v2, so never paste its text here; restate the method instead. Their multi-model steps use Claude models only (`fable`, `opus`, `sonnet`), by the repository owner's choice; do not add steps that shell out to other vendors' CLIs.
 
 ## Validating locally
 
@@ -79,7 +79,8 @@ It checks frontmatter against the contract above, that every skill has a README 
 "When NOT to use it" section, that every `references/` file is pointed at and every
 pointer resolves, that sibling links name real skills, that no skill is a dead end with
 zero outbound links, that each front door's routing table lists every skill in its
-family, and that the root README lists every skill. The last two are the checks that exist because that drift has already
+family and its "front door of N" heading matches that table, and that the root README
+lists every skill. The last two are the checks that exist because that drift has already
 shipped twice.
 
 The CI job runs only the frontmatter half, with a real YAML parser. To reproduce just

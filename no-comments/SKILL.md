@@ -1,6 +1,6 @@
 ---
 name: no-comments
-description: "Strip a change down to the comments that say what the code cannot: a reason, a constraint, a workaround or a non-obvious invariant. A fresh-context reviewer deletes the rest, stale comments are checked against the code, and rules that only a comment was guarding move into names, types, pure functions or tests. Use this skill before opening a PR or asking for review, when a diff narrates itself line by line, when comments restate a name or record change history ('added', 'now uses', 'fixed', 'per review'), when there are banners, commented-out code or docstrings on private helpers, when a comment opens with 'Note:' or 'IMPORTANT' or says 'do not remove' and nobody remembers why, when a comment no longer matches the code under it, when an eslint-disable or @ts-expect-error hides a real error, or when someone says 'remove the comments', 'reduce comments', 'clean up comment noise', 'stale comments', 'comment slop', 'deslop this diff'. Never touches license headers, tool directives, migrations or generated code, and lists ticketless TODOs instead of deleting them."
+description: "Strip a change down to the comments that say what the code cannot: a reason, a constraint, a workaround or a non-obvious invariant. A fresh-context reviewer deletes the rest, stale comments are checked against the code, and rules that only a comment was guarding move into names, types, pure functions or tests. Use this skill before opening a PR or asking for review, when a diff narrates itself line by line, when comments restate a name or record change history ('added', 'now uses', 'fixed', 'per review'), when there are banners, commented-out code or docstrings on private helpers, when a comment opens with 'Note:' or 'IMPORTANT' or says 'do not remove' and nobody remembers why, when a comment no longer matches the code under it, when an eslint-disable, @ts-expect-error or coverage ignore hides a real problem, or when someone says 'remove the comments', 'reduce comments', 'clean up comment noise', 'stale comments', 'comment slop', 'deslop this diff'. Never touches license headers, tool directives, migrations or generated code, and lists ticketless TODOs instead of deleting them."
 ---
 
 # No comments
@@ -25,30 +25,33 @@ Delete:
 - change history ("now uses", "added", "fixed", "per review"), which belongs in git
 - banners, section dividers and commented-out code
 - filler: "Note:", "Important:", "This function…", "Ensure that…", "robust", "comprehensive"
-- docstrings on private or self-explanatory functions. Public ones shrink to one line unless the contract is not obvious from the signature.
+- docstrings on private or self-explanatory functions
 
-Three cases need judgment rather than deletion:
+Four cases need judgment rather than deletion:
 
 - A TODO, FIXME or HACK with no ticket. List it for the user. Deleting it loses the one record that the problem exists.
 - A stale comment. Read it against the code it describes. If the code shows it is wrong, delete it, or rewrite it when the reason still matters and the code makes the true reason clear. If you cannot establish the real reason, leave it and list it. Never invent a rationale.
-- A reason about our own code. Before keeping it, ask whether a better name, a type, or an extracted pure function would say the same thing. If one would and it fits inside the scope, make that change and drop the comment. Otherwise keep it.
+- A reason about our own code. Ask whether a better name, a type, or an extracted pure function would say the same thing. If one would and it fits inside the scope, make that change and drop the comment. Otherwise keep it.
+- A public docstring. Shrink it to one line unless the contract is not obvious from the signature.
 
 ## Never touch
 
 - License and copyright headers, shebangs and encoding lines.
-- Directives a tool reads: `prettier-ignore`, `/// <reference …>`, `/* @__PURE__ */`, bundler magic comments, `// #region`, `//go:build` and its relatives, `// SAFETY:` on Rust `unsafe` blocks, and JSDoc type tags in `.js` files, which TypeScript reads as types. Lint and type suppressions are judged in step 5, not left alone.
-- Doc comments that a build or a published API reads: C# XML docs where missing ones fail the build, rustdoc on a library's public items, annotations that generate an OpenAPI spec. Shrink these, never delete them.
+- Directives a tool reads: `prettier-ignore`, `/// <reference …>`, `/* @__PURE__ */`, bundler magic comments, `// #region`, `//go:build` and its relatives, `// SAFETY:` on Rust `unsafe` blocks, and JSDoc type tags in `.js` files, which TypeScript reads as types.
+- Doc comments that a build or a published API reads: C# XML docs where missing ones fail the build, rustdoc on a library's public items, annotations that generate an OpenAPI spec. These can shrink but never disappear.
 - Migrations, generated code, vendored code and test snapshots.
+
+Suppressions are neither kept nor deleted on sight. They are judged in step 5.
 
 ## The pass
 
 1. Fix the scope: the files or diff the user names, otherwise everything the branch changes since its merge base with the default branch, including uncommitted edits and new untracked files. Lines outside the scope are not touched, because rewriting a teammate's file in a shared repo turns a cleanup into merge conflicts. Unless the user asked for this pass by name, confirm the scope before the reviewer starts.
-2. Hand the scope to a fresh-context reviewer subagent, not a fork of your own context, with the two sections above verbatim and these instructions. Delete every comment the rules say goes. Delete or keep, never reword. Edit nothing that is not a comment. Report each keep with the reason it stays, each ticketless TODO and stale comment, and each comment about our own code that a name, type or function could replace, naming the symbol. The agent that wrote the code wrote the comments and finds all of them necessary, which is why the reviewer has to be someone else. Without subagents, do the pass yourself and say so.
-3. Check the reviewer's diff. Revert any edit that is not a comment deletion, anything outside the scope, and any deletion of a comment that carried a real reason. A keep that only says "important" or "do not remove" gets traced: read what it guards, and read the commit that added it. If no reason holds up, the comment goes. If the report itself is wrong in ways that matter, rerun the reviewer once with the problem named. A second bad report ends the pass, reported as unfinished.
-4. Make the code say it. For each named symbol, rename it, give the value a type, or extract the logic into a pure function whose name states what the comment said. Do the ones that stay inside the scope. A rename that would reach callers outside it is reported, not done. Rewrite stale comments only where the code proves the true reason. For anything that needs a new shape, run `architect` on that piece and stop at the sketch.
-5. Judge every suppression. For an `eslint-disable`, look up the rule it silences. Where the rule protects correctness, such as a floating promise or a missing hook dependency, the suppression is hiding a bug: fix the code and drop the suppression. Where the rule is style only, keep the suppression or change the config. An `@ts-expect-error` or `@ts-ignore` names no rule, so remove it and run the type checker to see what it was hiding.
+2. Hand the scope to a fresh-context reviewer subagent, not a fork of your own context, with the two sections above verbatim. Its job is narrower than yours: delete whole comments that the Delete list names, and do nothing else to the files. Everything that needs judgment it reports instead of editing: each keep with its reason, each ticketless TODO, each stale comment, each reason that a name, type or function could replace with the symbol named, each public docstring to shrink, and each suppression. The agent that wrote the code wrote the comments and finds all of them necessary, which is why the reviewer has to be someone else. Without subagents, do the pass yourself and say so.
+3. Check the reviewer's diff. Revert any edit that is not a whole-comment deletion, anything outside the scope, and any deletion of a comment that carried a real reason. A keep that only says "important" or "do not remove" gets traced: read what it guards, and read the commit that added it. If no reason holds up, the comment goes. If the report itself is wrong in ways that matter, rerun the reviewer once with the problem named. A second bad report ends the pass, reported as unfinished.
+4. Handle what the reviewer reported. Make the code say what a reason was saying: rename the symbol, give the value a type, or extract the logic into a pure function whose name states it. A rename that would reach callers outside the scope is reported, not done, and anything that needs a new shape goes to `architect`, stopping at the sketch. Rewrite stale comments only where the code proves the true reason. Shrink the public docstrings. List the TODOs.
+5. Judge every suppression. For an `eslint-disable`, look up the rule it silences. Where the rule protects correctness, such as a floating promise or a missing hook dependency, the suppression is hiding a bug: fix the code and drop the suppression. Where the rule is style only, keep the suppression, or report the config change if the config is outside the scope. An `@ts-expect-error` or `@ts-ignore` names no rule, so remove it and run the type checker to see what it hid, unless it is a deliberate negative type test, such as a test file asserting that a brand rejects a raw string, which stays. Coverage and scanner ignores, such as `istanbul ignore`, `c8 ignore`, `Stryker disable`, `nosemgrep` and `gitleaks:allow`, are judged the same way: one over a branch no test can reach can stay with its reason, one over code nobody tested is a gap.
 6. Encode the constraints. A comment such as "order matters" or "talk to the payments team first" is a rule written where nothing checks it. Offer the cheapest enforcement in scope: a type that makes the wrong order unrepresentable, a test that fails if the line goes, a lint rule. Wait for a yes. If the answer is no, or nobody is there to answer, keep the comment and list the constraint as unenforced in the PR.
-7. Verify. The diff shows comment deletions, the rewrites and reshapes you accepted, and nothing else. The type check, lint and tests pass. Do not run a formatter over whole files, because it changes lines outside the scope. As a rough measure, comment lines should end up under about 15% of the code the change adds.
+7. Verify. The diff shows comment deletions plus the rewrites, reshapes, suppression fixes and encodings you accepted, and nothing else. The type check, lint and tests pass. Do not run a formatter over whole files, because it changes lines outside the scope. As a rough measure, comment lines should end up under about 15% of the code the change adds.
 
 Report the number of deletions, each keep with its reason, the reshapes, rewrites and suppression fixes, the encodings, the ticketless TODOs and unresolved stale comments, and the constraints left unenforced.
 
@@ -88,6 +91,7 @@ test("prefers the nickname, then the full name, then the email", () => {
 | A constraint that a type could enforce instead of a comment | `strong-typescript` |
 | A constraint that a test should enforce, written test first | `tdd` |
 | A suppression hiding a real failure, worth a hostile second look | `interrogate` |
+| The PR description, which goes stale the same way comments do | `claims-check` |
 
 ## When NOT to use it
 
