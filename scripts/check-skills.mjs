@@ -2,9 +2,8 @@
 // Structural checks for this repository. Zero dependencies, run with `node scripts/check-skills.mjs`.
 //
 // Catches the three kinds of drift that have actually happened here: frontmatter the
-// skills CLI silently skips at publish time, a new skill missing from the front door's
-// routing table, and a skill with no outbound links that leaves a reader with nowhere
-// to go.
+// skills CLI silently skips at publish time, a new skill missing from its family's front
+// door, and a skill with no outbound links that leaves a reader with nowhere to go.
 
 import { readdirSync, readFileSync, existsSync, statSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
@@ -12,6 +11,10 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const FRONT_DOOR = "functional-architecture";
+// The design workflow is a second family with its own door. Any skill not listed here
+// defaults to the code-shape family, so a new skill cannot skip routing by omission.
+const DESIGN_DOOR = "architect";
+const DESIGN_FAMILY = new Set(["arena", "interrogate", "tdd", "no-comments", "strong-typescript"]);
 // Skills that sit outside the functional-architecture family and are deliberately
 // absent from its routing table. Each still has to be reachable from somewhere.
 const OUTSIDE_FAMILY = new Set(["react-state"]);
@@ -114,15 +117,22 @@ for (const name of skills) {
   if (outbound.size === 0) fail(name, "has no outbound links to any sibling; a reader landing here has nowhere to go");
 }
 
-// The front door has to route to every skill in the family.
-const frontDoor = bodies.get(FRONT_DOOR);
-if (!frontDoor) {
-  fail("repo", `front door '${FRONT_DOOR}' not found`);
-} else {
-  for (const name of skills) {
-    if (name === FRONT_DOOR || OUTSIDE_FAMILY.has(name)) continue;
-    if (!frontDoor.includes(`\`${name}\``) && !frontDoor.includes(`../${name}/`))
-      fail(`${FRONT_DOOR}/SKILL.md`, `routing table does not mention '${name}'`);
+// Each front door has to route to every skill in its family, in a table row of both its
+// SKILL.md and its README. A mention in prose does not count: a door's prose names
+// siblings in passing, so a deleted table row would otherwise go unnoticed.
+const routesTo = (text, name) =>
+  text.split("\n").some((l) => l.startsWith("|") && (l.includes(`\`${name}\``) || l.includes(`../${name}/`)));
+for (const door of [FRONT_DOOR, DESIGN_DOOR]) {
+  if (!bodies.has(door)) fail("repo", `front door '${door}' not found`);
+}
+for (const name of skills) {
+  if (name === FRONT_DOOR || name === DESIGN_DOOR || OUTSIDE_FAMILY.has(name)) continue;
+  const door = DESIGN_FAMILY.has(name) ? DESIGN_DOOR : FRONT_DOOR;
+  if (!bodies.has(door)) continue;
+  for (const file of ["SKILL.md", "README.md"]) {
+    const path = join(root, door, file);
+    if (existsSync(path) && !routesTo(readFileSync(path, "utf8"), name))
+      fail(`${door}/${file}`, `routing table does not list '${name}'`);
   }
 }
 

@@ -50,7 +50,7 @@ Favour composable functions, **mostly**. Generalise a function when a second cal
 
 ## Where to go next
 
-This skill covers turning procedures into composed functions. Six neighbouring problems have their own skills — use them rather than re-deriving the pattern here:
+This skill covers turning procedures into composed functions. Seven neighbouring problems have their own skills — use them rather than re-deriving the pattern here:
 
 | The code you're looking at | Use |
 |---|---|
@@ -59,9 +59,10 @@ This skill covers turning procedures into composed functions. Six neighbouring p
 | A domain type that wraps a value in fixed slots (long/short, per-locale, per-group) and re-branches in every operation | `domain-functors` |
 | Throwing, `try/catch`, `async` I/O, or logic you can't test without stubbing the world | `effects-as-values` |
 | An object whose optional fields only make sense in certain combinations, or booleans encoding a mode | `discriminated-unions` |
+| `as` casts, `any`, non-null assertions, or JSON and env vars used without parsing | `strong-typescript` |
 | A pure rule that's correct here — and duplicated on the other side of an API boundary | `policy-as-data` |
 
-The first five are code-shape problems inside one codebase. The last is a *boundary* problem: extracting a clean `canCancelOrder(order)` is this skill's job, but if the client has its own copy of it, purity doesn't stop the two from drifting.
+Five of these are code-shape problems inside one codebase. `strong-typescript` is about what the compiler is allowed to believe, and belongs to the design family, whose front door is `architect`. The last is a *boundary* problem: extracting a clean `canCancelOrder(order)` is this skill's job, but if the client has its own copy of it, purity doesn't stop the two from drifting.
 
 `references/refactor-recipes.md` has before/after TypeScript for each rung of the ladder — class to module, imperative loop to pipeline, flag parameter to composition, and mutation to transformation. `references/composition-in-typescript.md` covers typing `pipe`, curried factories, generic stages, and the readability limits of point-free style.
 
