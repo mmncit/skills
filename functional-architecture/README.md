@@ -38,7 +38,9 @@ This skill covers turning procedures into composed functions, and routes to a si
 
 The first five are code-shape problems within one codebase. The last is a boundary problem: a rule can be perfectly pure and still exist twice.
 
-[react-state](../react-state/) is the eighth skill in this repository and sits outside the family. It is reached from `discriminated-unions`, which is the modelling move the two share.
+[react-state](../react-state/) sits outside the family. It is reached from `discriminated-unions`, which is the modelling move the two share.
+
+The design skills are a second family with [architect](../architect/) as their front door. They cover how a change gets made rather than the shape of the code: sketching it first, comparing attempts, attacking the result, and building it test first. Casts, `any` and input nobody parsed go to [strong-typescript](../strong-typescript/) in that family.
 
 ## When it fires
 

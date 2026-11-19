@@ -54,14 +54,18 @@ Malformed YAML — most often an unquoted `: ` inside `description` — makes th
 **Body conventions**, as established by the existing skills:
 
 - Open with the core idea in two or three sentences, then a short diagnostic ("two symptoms that say…").
-- Structure the advice as a **ladder of increasing cost**, and state where most readers should stop.
+- Structure the advice as a **ladder of increasing cost**, and state where most readers should stop. The design skills that run a fixed procedure, `arena`, `interrogate` and `no-comments`, use ordered phases or steps instead, and `tdd`'s ladder is a sequence to finish rather than a place to stop. They still open with the core idea and close with the limits.
 - TypeScript for all examples, `BEFORE`/`AFTER` pairs where a refactor is being shown.
 - Close with a **"When NOT to use it"** section that names real costs. This is load-bearing — a skill that only argues for itself gets applied where it doesn't belong.
 - Verify runtime claims before asserting them. If a code sample depends on library behaviour (a round trip preserving a field, a flag doing what the docs imply), run it.
 
 ## Cross-linking
 
-`functional-architecture` is the designated front door and carries a routing table in both its `SKILL.md` and `README.md`. **When adding a skill, add a row there** and update the "front door of N" heading, or the new skill is undiscoverable from the entry point. Add a reciprocal link in the new skill's "Where to go next".
+There are two families, each with a front door that carries a routing table in both its `SKILL.md` and `README.md`. `functional-architecture` is the door for the code-shape skills. `architect` is the door for the design skills: `arena`, `interrogate`, `tdd`, `strong-typescript`, `no-comments` and `claims-check`. A door's README keeps its routing table under a `## The front door of N` heading, where N counts the routed skills plus the door itself, and has no second table listing the same skills.
+
+**When adding a skill, add a row to its family's door** and update that door's "front door of N" heading, or the new skill is undiscoverable from the entry point. A new design skill also goes into `DESIGN_FAMILY` in `scripts/check-skills.mjs`; anything not listed there is checked against `functional-architecture`. Add a reciprocal link in the new skill's "Where to go next".
+
+The design skills credit [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, MIT licensed, in their README Credit sections and the root README. Keep that credit when editing them. Ideas from Matt Pocock's skills, Addy Osmani's agent-skills and rfxn's rdf are restated in this repository's own words and credited the same way. rdf is GPL v2, so never paste its text here; restate the method instead. Their multi-model steps use Claude models only (`fable`, `opus`, `sonnet`), by the repository owner's choice; do not add steps that shell out to other vendors' CLIs.
 
 ## Validating locally
 
@@ -74,8 +78,9 @@ node scripts/check-skills.mjs
 It checks frontmatter against the contract above, that every skill has a README and a
 "When NOT to use it" section, that every `references/` file is pointed at and every
 pointer resolves, that sibling links name real skills, that no skill is a dead end with
-zero outbound links, and that both the front door's routing table and the root README
-list every skill. The last two are the checks that exist because that drift has already
+zero outbound links, that each front door's routing table lists every skill in its
+family and its "front door of N" heading matches that table, and that the root README
+lists every skill. The last two are the checks that exist because that drift has already
 shipped twice.
 
 The CI job runs only the frontmatter half, with a real YAML parser. To reproduce just
