@@ -7,7 +7,7 @@ A reviewer who reads a diff finds what the diff makes easy to see. An adversary 
 ## The shape
 
 1. Frame: fix the scope, new files included, and restate the intent in one sentence every finding is judged against. The intent always includes keeping unrelated behaviour working.
-2. Fan out: three fresh adversaries on `fable`, `opus` and `sonnet`, each in its own worktree with the scope applied as a patch, attacking inputs and boundaries, state and time, or the contract with every caller.
+2. Fan out: three fresh adversaries on `fable`, `opus` and `sonnet`, each in a worktree you create at the scope's commit, with any uncommitted work applied as a patch, attacking inputs and boundaries, state and time, or the contract with every caller.
 3. Verify: rerun every reported command, keep failures that break the intent, set aside failures that also happen on the merge base, merge shared root causes.
 4. Report: intent, verified findings with the adversaries that found them, pre-existing failures, and what each adversary dropped.
 

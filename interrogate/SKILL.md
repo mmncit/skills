@@ -11,7 +11,7 @@ Two symptoms say a change needs this. It passed review and tests, and you still 
 
 ## Frame
 
-1. Fix the scope. It is whatever the user names. Otherwise it is everything the branch changes since its merge base with the default branch: commits, uncommitted edits, and new files git does not track yet. `git diff` alone misses the new files, so list them with `git ls-files --others --exclude-standard`.
+1. Fix the scope. It is whatever the user names. Otherwise it is everything the branch changes since its merge base with the default branch: commits, uncommitted edits, and new files git does not track yet. `git diff` alone misses the new files, so list them with `git ls-files --others --exclude-standard`. For a change that is already merged, that default is empty, so name the commit and attack the range from its parent to it.
 2. State the intent in your own words, from the user's message, the commit messages and the PR description. Ask the user if the intent is unclear. Every finding is judged against this sentence, so a vague intent produces vague verdicts. The intent always has a second half nobody writes down: behaviour the change does not mean to alter keeps working.
 
 ## Fan out
@@ -24,7 +24,13 @@ The default is three adversaries, one each on `fable`, `opus` and `sonnet`. All 
 
 Three adversaries cost roughly three full reviews. Unless the user asked for this skill by name, say what you are about to launch and wait for a yes. If nobody is there to answer, launch only when whoever started the run asked for it.
 
-Give each adversary its own worktree. A worktree starts from a commit, so uncommitted work does not come with it. Save the scope as a patch first, from the repository root so new files keep their full paths, and to a file of its own so two runs cannot overwrite each other:
+Give each adversary its own worktree, created by you before launch, so you choose the commit it starts from and the step works in any harness:
+
+```bash
+git worktree add --detach "<dir>/adversary-1" <commit>
+```
+
+A worktree starts from a commit, so uncommitted work does not come with it. When the scope has uncommitted work, save it as a patch first, from the repository root so new files keep their full paths, and to a file of its own so two runs cannot overwrite each other:
 
 ```bash
 cd "$(git rev-parse --show-toplevel)"
@@ -33,17 +39,17 @@ git diff HEAD --binary > "$patch"
 git ls-files --others --exclude-standard -z | xargs -0 -n1 git diff --no-index --binary /dev/null >> "$patch" || true
 ```
 
-Make applying that patch with `git apply`, then checking `git status`, the first step of every brief. In Claude Code each adversary is a fresh Agent call with `model` set and `isolation: "worktree"`. Do not fork your own context for this: a fork ignores `model` and starts out agreeing with you. Launch them all in one message.
+Apply it in each worktree with `git apply` and check `git status` before launching. Each brief names its adversary's worktree path. In Claude Code each adversary is then a fresh Agent call with `model` set. Its `isolation: "worktree"` option is not a substitute: it refuses to run unless the session itself is inside the target repository, and it does not let you pick the commit. Do not fork your own context for this either: a fork ignores `model` and starts out agreeing with you. Launch them all in one message, and once the findings are verified, keep the reproduction scripts somewhere that outlives the worktrees, then remove them with `git worktree remove --force`, since adversaries leave probe files behind.
 
 If your harness cannot set a model per subagent, run all three lines of attack on the current model and say so in the report. Without subagents at all, run the three lines of attack yourself one after another, and say that the review was not independent.
 
 Each adversary gets the scope, the intent, its line of attack, and this brief verbatim:
 
-> Your job is to make this change fail. A finding counts only if something you ran against the real code shows it: a test that fails, a script that reproduces the problem, or a command whose output is wrong. For a design, build a small prototype or probe the current tree. Work only in your own worktree. For each finding give a short title, the command you ran, what it printed, and what the intent says it should have printed. Report nothing you did not run, so no comments on style, naming or structure, and no risks that need some later change before they bite. Finding nothing is an acceptable answer.
+> Your job is to make this change fail. A finding counts only if something you ran against the real code shows it: a test that fails, a script that reproduces the problem, or a command whose output is wrong. For a design, build a small prototype or probe the current tree. Work only in your own worktree. For each finding give a short title, the command you ran, what it printed, and what the intent says it should have printed. Report nothing you did not run, so no comments on style, naming or structure, and no risks that need some later change before they bite. Make each reproduction self-contained, building whatever throwaway files it needs, and collect them in one script that reruns every finding from your worktree. Finding nothing is an acceptable answer.
 
 ## Verify
 
-Rerun every reported command yourself, in that adversary's worktree. Keep a finding when the output shows the failure and the failure breaks the intent, including its unwritten half. Drop findings whose command does not reproduce, and findings that only hold by misreading the intent; note the misreading, because it may mean the intent was badly worded. Run the survivors on the merge base too: a failure that was already there before the change is pre-existing, so list it separately rather than as a finding. Merge findings that share a root cause, and keep a list of which adversaries found each one.
+Rerun every reported command yourself, in that adversary's worktree; with a rerun script, run it and compare its results with the report finding by finding. Keep a finding when the output shows the failure and the failure breaks the intent, including its unwritten half. Drop findings whose command does not reproduce, and findings that only hold by misreading the intent; note the misreading, because it may mean the intent was badly worded. Run the survivors on the merge base too: a failure that was already there before the change is pre-existing, so list it separately rather than as a finding. When the code under attack did not exist at the merge base, there is nothing to compare, and every survivor belongs to the change. Merge findings that share a root cause, and keep a list of which adversaries found each one.
 
 Unlike an arena, there is no base to pick and no graft. Adversaries find different failures, so the verdict keeps every verified finding rather than choosing one adversary's list.
 
