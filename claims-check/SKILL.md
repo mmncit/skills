@@ -22,10 +22,10 @@ Opinions, plans and questions are not claims. Leave them alone.
 
 ## The pass
 
-1. Pin what the text describes: the head commit, and the diff from its merge base with the default branch. Every answer comes from that pin, not from what you remember of an earlier state.
-2. Give the text and the pin to a fresh-context subagent, not a fork of your own context, with this section and the two below. It lists every claim, then answers each one from the code before rereading the wording: count the callers itself, then compare the count with the sentence. Reading the sentence first is how a reviewer ends up agreeing with it. Without subagents, do the pass yourself and say so.
-3. For each claim it returns a verdict and, for anything other than confirmed, the smallest replacement text that is true.
-4. Apply the corrections. Replace what is wrong, overstated or stale. Remove what is unverifiable, or keep it marked as not checked.
+1. Pin what the text describes: the head commit, and the diff from its merge base with the default branch. For a PR that is already merged, that diff is empty, so pin the merge commit and diff it against its parent. Every answer comes from that pin, not from what you remember of an earlier state.
+2. Give the text and the pin to a fresh-context subagent, not a fork of your own context, with this section and the two below. It lists every claim, then works out the facts from the code and from commands it runs before judging the wording: count the callers itself, then compare the count with the sentence. Judging the sentence first is how a reviewer ends up agreeing with it. A sentence that mixes a past run with something the code can do, such as "caught the sabotage at the right line", is two claims: the run is unverifiable, and the capability gets checked on its own. Without subagents, do the pass yourself and say so.
+3. For each claim it returns a verdict and, for a claim that is wrong, overstated or stale, the smallest replacement text that is true.
+4. Apply the corrections. Replace what is wrong, overstated or stale. For unverifiable claims, either remove them or keep them marked as not checked, for example by opening the paragraph with "From the author's runs, not re-checked:".
 
 Report the number of claims, the count per verdict, each correction, and what stays unverified.
 
@@ -44,7 +44,7 @@ Two claims need more than a reading:
 
 - Confirmed: the code says the same thing.
 - Wrong: the code says something else.
-- Overstated: true for some of the cases, claimed for all of them.
+- Overstated: true for some of the cases, claimed for all of them. This includes a claim that holds only behind a flag or an option the sentence leaves out; the replacement names it.
 - Stale: true at an earlier commit, no longer true at the pin.
 - Unverifiable: nothing available here can settle it, such as production behaviour or a system you cannot reach.
 

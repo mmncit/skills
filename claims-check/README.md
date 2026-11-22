@@ -6,9 +6,9 @@ Reviewers trust the description and skim the diff, and the description is usuall
 
 ## The shape
 
-1. Pin the head commit and the diff the text describes.
-2. A fresh subagent lists every claim: numbers, references, change verbs, scope words, verification and behaviour.
-3. It answers each from the code first, then gives a verdict: confirmed, wrong, overstated, stale or unverifiable.
+1. Pin the head commit and the diff the text describes, or for a merged PR the merge commit against its parent.
+2. A fresh subagent lists every claim: numbers, references, change verbs, scope words, verification and behaviour. A sentence that mixes a past run with what the code can do counts as two claims.
+3. It works out the facts from the code first, then gives a verdict: confirmed, wrong, overstated, stale or unverifiable.
 4. Corrections replace what is untrue, and unverifiable claims are removed or marked as not checked.
 
 Summaries and agent reports are never evidence, and "covered by tests" needs a test seen failing without the change.

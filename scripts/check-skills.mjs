@@ -10,14 +10,24 @@ import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const FRONT_DOOR = "functional-architecture";
-// The design workflow is a second family with its own door. Any skill not listed here
-// defaults to the code-shape family, so a new skill cannot skip routing by omission.
-const DESIGN_DOOR = "architect";
-const DESIGN_FAMILY = new Set(["arena", "interrogate", "tdd", "no-comments", "strong-typescript", "claims-check"]);
-// Skills that sit outside the functional-architecture family and are deliberately
-// absent from its routing table. Each still has to be reachable from somewhere.
-const OUTSIDE_FAMILY = new Set(["react-state"]);
+// The only place skill families are declared. `doorOf` maps a skill to the front door that
+// has to route to it, or to null for a skill deliberately routed by no door. A skill with
+// no entry belongs to `defaultDoor`, so a new skill cannot skip routing by omission. A
+// family exists as soon as one entry names its door.
+const FAMILIES = {
+  defaultDoor: "functional-architecture",
+  doorOf: {
+    arena: "architect",
+    interrogate: "architect",
+    tdd: "architect",
+    "no-comments": "architect",
+    "strong-typescript": "architect",
+    "claims-check": "architect",
+    "react-state": null,
+  },
+};
+const DOORS = new Set([FAMILIES.defaultDoor, ...Object.values(FAMILIES.doorOf).filter((door) => door !== null)]);
+const doorOf = (name) => (Object.hasOwn(FAMILIES.doorOf, name) ? FAMILIES.doorOf[name] : FAMILIES.defaultDoor);
 
 const problems = [];
 const fail = (file, msg) => problems.push(`${file}: ${msg}`);
@@ -129,7 +139,7 @@ const doorSection = (readme) => {
 };
 
 const doorRows = new Map();
-for (const door of [FRONT_DOOR, DESIGN_DOOR]) {
+for (const door of DOORS) {
   if (!bodies.has(door)) {
     fail("repo", `front door '${door}' not found`);
     continue;
@@ -144,9 +154,16 @@ for (const door of [FRONT_DOOR, DESIGN_DOOR]) {
     fail(`${door}/README.md`, `heading says a front door of ${section.count}, but the table routes to ${section.rows.length} skills plus the door itself`);
   doorRows.set(door, { skill: tableRows(bodies.get(door)), readme: section.rows });
 }
+// An entry that names no skill, or names a door, would otherwise be ignored without a word.
+if (!skills.includes(FAMILIES.defaultDoor))
+  fail("scripts/check-skills.mjs", `FAMILIES.defaultDoor is '${FAMILIES.defaultDoor}', which is not a skill`);
+for (const name of Object.keys(FAMILIES.doorOf)) {
+  if (!skills.includes(name)) fail("scripts/check-skills.mjs", `FAMILIES.doorOf lists '${name}', which is not a skill`);
+  else if (DOORS.has(name)) fail("scripts/check-skills.mjs", `FAMILIES.doorOf lists '${name}', which is itself a front door`);
+}
 for (const name of skills) {
-  if (name === FRONT_DOOR || name === DESIGN_DOOR || OUTSIDE_FAMILY.has(name)) continue;
-  const door = DESIGN_FAMILY.has(name) ? DESIGN_DOOR : FRONT_DOOR;
+  if (DOORS.has(name)) continue;
+  const door = doorOf(name);
   const rows = doorRows.get(door);
   if (!rows) continue;
   if (!rows.skill.some((l) => mentions(l, name))) fail(`${door}/SKILL.md`, `routing table does not list '${name}'`);
